@@ -47,6 +47,8 @@ Route::delete('/admin/pengguna/{id}', [PenggunaController::class, 'delete'])->na
 
 Route::get('/admin/produk', [ProdukCotroller::class, 'index'])->name('admin.produk');
 Route::get('/admin/tambahproduk', [ProdukCotroller::class, 'show'])->name('admin.tambahproduk');
+Route::post('/admin/tambahproduk', [ProdukCotroller::class, 'store'])->name('store.admin.tambahproduk');
+
 
 
 
