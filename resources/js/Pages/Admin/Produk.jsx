@@ -25,6 +25,7 @@ export default function Produk({ produk }) {
                                     <th>Harga</th>
                                     <th>Diskon</th>
                                     <th>Stok</th>
+                                    <th>Image</th>
                                     <th>Opsi</th>
                                 </tr>
                             </thead>
@@ -35,10 +36,14 @@ export default function Produk({ produk }) {
                                         <td className="font-medium">{index + 1}</td>
                                         <td>{item.kode_produk}</td>
                                         <td>{item.nama_produk}</td>
+                                        <td>{item.kategoriproduk.kategori}</td>
                                         <td>{item.ukuran}</td>
                                         <td>{item.harga}</td>
                                         <td>{item.diskon}</td>
                                         <td>{item.stok}</td>
+                                        <td>
+
+                                        </td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <button

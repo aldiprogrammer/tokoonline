@@ -14,7 +14,7 @@ class ProdukCotroller extends Controller
 {
     function index()
     {
-        $produk = Produk::all();
+        $produk = Produk::with('kategoriproduk')->get();
         return Inertia::render('Admin/Produk', compact('produk'));
     }
 
@@ -55,6 +55,6 @@ class ProdukCotroller extends Controller
         $img->save();
 
 
-        return redirect()->route('admin.tambahproduk')->with('success', 'Data berhasil ditambah');
+        return redirect()->route('admin.produk')->with('success', 'Data berhasil ditambah');
     }
 }

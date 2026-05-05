@@ -16,4 +16,9 @@ class Produk extends Model
     //         $product->slug = static::generateSlug($product->nama_produk);
     //     });
     // }
+
+    public function kategoriproduk()
+    {
+        return $this->belongsTo(Kategori::class, 'id_kategori');
+    }
 }
