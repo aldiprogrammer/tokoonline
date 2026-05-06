@@ -1,6 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout'
-import { router, useForm } from '@inertiajs/react'
+import { useForm } from '@inertiajs/react'
 import React from 'react'
+import Swal from 'sweetalert2'
 
 export default function Role({ role }) {
     const { data, setData, post, put, delete: destroy, reset, processing } = useForm({
@@ -37,9 +38,25 @@ export default function Role({ role }) {
     }
 
     const hapus = (id) => {
-        if (confirm("Yakin ingin menghapus")) {
-            destroy("/admin/role/" + id);
-        }
+        Swal.fire({
+            title: 'Hapus role?',
+            text: 'Data role akan dihapus permanen.',
+            icon: 'warning',
+            showCancelButton: true,
+            buttonsStyling: false,
+            customClass: {
+                actions: 'gap-3',
+                confirmButton: 'px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400',
+                cancelButton: 'px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300',
+            },
+            confirmButtonText: 'Ya, hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                destroy('/admin/role/' + id);
+            }
+        });
     }
 
 
