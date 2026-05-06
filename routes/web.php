@@ -7,6 +7,8 @@ use App\Http\Controllers\admin\ProdukCotroller;
 use App\Http\Controllers\admin\RoleController;
 use App\Http\Controllers\App\CartController;
 use App\Http\Controllers\App\CustomerController;
+use App\Http\Controllers\app\KeranjangController;
+use App\Http\Controllers\app\ProfilController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LoginUserController;
 use App\Http\Controllers\Auth\PenggunaLoginController;
@@ -26,6 +28,10 @@ Route::get('/auth/callback', [GoogleController::class, 'callback'])->name('googl
 Route::get('/login', [PenggunaLoginController::class, 'show'])->name('login');
 Route::post('/login', [PenggunaLoginController::class, 'login'])->name('login.proses');
 Route::post('/logout', [PenggunaLoginController::class, 'logout'])->name('logout');
+
+Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
+Route::get('/keranjang/{iduser}', [KeranjangController::class, 'index'])->name('karanjang');
+
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');

@@ -26,4 +26,9 @@ class Produk extends Model
     {
         return $this->hasMany(Gambarprodk::class, 'id_produk');
     }
+
+    public function gambar()
+    {
+        return $this->hasMany(Gambarprodk::class, 'id_produk');
+    }
 }
