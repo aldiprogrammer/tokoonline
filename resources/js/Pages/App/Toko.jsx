@@ -1,9 +1,11 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router, usePage } from '@inertiajs/react'
 import React, { useEffect, useMemo, useState } from 'react'
+import Swal from 'sweetalert2'
 
 export default function Toko({ produk, kategori }) {
+    const { auth, flash, cart: initialCart } = usePage().props
     const [selectedCategory, setSelectedCategory] = useState('semua')
-    const [cart, setCart] = useState([])
+    const [cart, setCart] = useState(initialCart ?? [])
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
     const [customer, setCustomer] = useState({
@@ -13,16 +15,22 @@ export default function Toko({ produk, kategori }) {
     })
 
     useEffect(() => {
-        const savedCart = localStorage.getItem('febrinox_cart')
-
-        if (savedCart) {
-            setCart(JSON.parse(savedCart))
-        }
-    }, [])
+        setCart(initialCart ?? [])
+    }, [initialCart])
 
     useEffect(() => {
-        localStorage.setItem('febrinox_cart', JSON.stringify(cart))
-    }, [cart])
+        if (flash?.success || flash?.error) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: flash.success ? 'success' : 'error',
+                title: flash.success || flash.error,
+                showConfirmButton: false,
+                timer: 2400,
+                timerProgressBar: true,
+            });
+        }
+    }, [flash?.success, flash?.error])
 
     const filteredProduk = useMemo(() => {
         if (selectedCategory === 'semua') {
@@ -54,61 +62,142 @@ export default function Toko({ produk, kategori }) {
     const cartCount = cart.reduce((total, item) => total + item.qty, 0)
     const cartTotal = cart.reduce((total, item) => total + item.harga * item.qty, 0)
 
-    const addToCart = (item) => {
-        setCart((currentCart) => {
-            const existingProduct = currentCart.find((cartItem) => cartItem.id === item.id)
+    const sendCartRequest = async (url, method, payload = null, successMessage = null) => {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+            credentials: 'same-origin',
+            body: payload ? JSON.stringify(payload) : null,
+        })
 
-            if (existingProduct) {
-                return currentCart.map((cartItem) =>
-                    cartItem.id === item.id
-                        ? { ...cartItem, qty: Math.min(cartItem.qty + 1, Number(item.stok || 1)) }
-                        : cartItem
-                )
+        const result = await response.json()
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Gagal memperbarui keranjang')
+        }
+
+        setCart(result.cart || [])
+
+        if (successMessage) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: successMessage,
+                showConfirmButton: false,
+                timer: 2200,
+                timerProgressBar: true,
+            })
+        }
+
+        return result
+    }
+
+    const addToCart = async (item) => {
+        if (!auth?.user) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Login dulu',
+                text: 'Silakan login dengan Google sebelum menambahkan produk ke keranjang.',
+                showCancelButton: true,
+                confirmButtonText: 'Login Google',
+                cancelButtonText: 'Batal',
+                buttonsStyling: false,
+                customClass: {
+                    actions: 'gap-3',
+                    confirmButton: 'px-4 py-2 rounded-lg bg-gray-950 text-white font-semibold hover:bg-gray-800',
+                    cancelButton: 'px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300',
+                },
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit('/loginuser')
+                }
+            })
+
+            return
+        }
+
+        try {
+            await sendCartRequest('/cart', 'POST', {
+                product_id: item.id,
+                qty: 1,
+                ukuran: item.ukuran?.split(',')?.[0] || '',
+            }, 'Produk ditambahkan ke keranjang')
+            setIsCartOpen(true)
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        }
+    }
+
+    const increaseQty = async (cartId) => {
+        if (!auth?.user) {
+            router.visit('/loginuser')
+            return
+        }
+
+        const item = cart.find((cartItem) => cartItem.id === cartId)
+        if (!item) return
+
+        try {
+            await sendCartRequest(`/cart/${cartId}`, 'PUT', {
+                qty: Math.min(item.qty + 1, item.stok),
+            })
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        }
+    }
+
+    const decreaseQty = async (cartId) => {
+        if (!auth?.user) {
+            router.visit('/loginuser')
+            return
+        }
+
+        const item = cart.find((cartItem) => cartItem.id === cartId)
+        if (!item) return
+
+        try {
+            if (item.qty <= 1) {
+                await sendCartRequest(`/cart/${cartId}`, 'DELETE')
+                return
             }
 
-            return [
-                ...currentCart,
-                {
-                    id: item.id,
-                    nama_produk: item.nama_produk,
-                    harga: Number(item.harga || 0),
-                    ukuran: item.ukuran,
-                    stok: Number(item.stok || 0),
-                    image: getProductImage(item),
-                    qty: 1,
-                },
-            ]
-        })
-        setIsCartOpen(true)
+            await sendCartRequest(`/cart/${cartId}`, 'PUT', {
+                qty: item.qty - 1,
+            })
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        }
     }
 
-    const increaseQty = (id) => {
-        setCart((currentCart) =>
-            currentCart.map((item) =>
-                item.id === id ? { ...item, qty: Math.min(item.qty + 1, item.stok) } : item
-            )
-        )
+    const removeFromCart = async (cartId) => {
+        try {
+            await sendCartRequest(`/cart/${cartId}`, 'DELETE')
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        }
     }
 
-    const decreaseQty = (id) => {
-        setCart((currentCart) =>
-            currentCart
-                .map((item) => item.id === id ? { ...item, qty: item.qty - 1 } : item)
-                .filter((item) => item.qty > 0)
-        )
-    }
-
-    const removeFromCart = (id) => {
-        setCart((currentCart) => currentCart.filter((item) => item.id !== id))
-    }
-
-    const checkout = (e) => {
+    const checkout = async (e) => {
         e.preventDefault()
-        alert(`Checkout berhasil dibuat untuk ${customer.nama}. Total belanja: ${formatRupiah(cartTotal)}`)
-        setCart([])
+        if (!auth?.user) {
+            router.visit('/loginuser')
+            return
+        }
+
+        await sendCartRequest('/cart', 'DELETE')
         setIsCheckoutOpen(false)
         setIsCartOpen(false)
         setCustomer({ nama: '', hp: '', alamat: '' })
+        Swal.fire('Berhasil', `Checkout berhasil dibuat untuk ${customer.nama}. Total belanja: ${formatRupiah(cartTotal)}`, 'success')
+    }
+
+    const logoutUser = () => {
+        router.post('/logoutuser')
     }
 
     return (
@@ -118,11 +207,11 @@ export default function Toko({ produk, kategori }) {
             <div className="min-h-screen bg-white text-gray-950">
                 <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+                        <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
                             <span className="grid h-9 w-9 place-items-center rounded-lg bg-gray-950 text-white">
                                 <i className="fas fa-shirt"></i>
                             </span>
-                            FEBRINOX
+                            <span className="truncate">FEBRINOX</span>
                         </Link>
 
                         <nav className="hidden items-center gap-7 text-sm font-semibold text-gray-600 md:flex">
@@ -132,7 +221,33 @@ export default function Toko({ produk, kategori }) {
                         </nav>
 
                         <div className="flex items-center gap-2">
-                            <button className="grid h-10 w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100">
+                            {auth?.user ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 px-2 sm:px-3">
+                                        {auth.user.avatar ? (
+                                            <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
+                                        ) : (
+                                            <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-950 text-xs font-bold text-white">
+                                                {auth.user.name?.charAt(0)?.toUpperCase()}
+                                            </span>
+                                        )}
+                                        <span className="hidden max-w-28 truncate text-sm font-semibold sm:inline">{auth.user.name}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={logoutUser}
+                                        className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 text-red-600 hover:bg-red-50 sm:grid"
+                                    >
+                                        <i className="fas fa-right-from-bracket"></i>
+                                    </button>
+                                </div>
+                            ) : (
+                                <Link href="/loginuser" className="grid h-10 w-10 place-items-center rounded-lg border border-gray-200 text-gray-950 hover:bg-gray-100 sm:w-auto sm:px-4">
+                                    <i className="fas fa-user sm:hidden"></i>
+                                    <span className="hidden text-sm font-bold sm:inline">Login</span>
+                                </Link>
+                            )}
+                            <button className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100 min-[380px]:grid">
                                 <i className="fas fa-magnifying-glass"></i>
                             </button>
                             <button
@@ -239,11 +354,13 @@ export default function Toko({ produk, kategori }) {
                                 {filteredProduk.map((item) => (
                                     <article key={item.id} className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                                         <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
-                                            <img
-                                                src={getProductImage(item)}
-                                                alt={item.nama_produk}
-                                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                            />
+                                            <Link href={`/produk/${item.slug}`}>
+                                                <img
+                                                    src={getProductImage(item)}
+                                                    alt={item.nama_produk}
+                                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                                />
+                                            </Link>
                                             {Number(item.diskon) > 0 && (
                                                 <span className="absolute left-2 top-2 rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white">
                                                     -{item.diskon}%
@@ -251,7 +368,7 @@ export default function Toko({ produk, kategori }) {
                                             )}
                                             <button
                                                 type="button"
-                                                onClick={() => addToCart(item)}
+                                                onClick={() => router.visit(`/produk/${item.slug}`)}
                                                 disabled={Number(item.stok) < 1}
                                                 className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-lg bg-white text-gray-950 shadow-md hover:bg-gray-950 hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                                             >
@@ -263,15 +380,15 @@ export default function Toko({ produk, kategori }) {
                                             <p className="mb-1 truncate text-xs font-semibold uppercase text-gray-500">
                                                 {item.kategoriproduk?.kategori || 'Fashion'}
                                             </p>
-                                            <h3 className="line-clamp-2 min-h-[40px] text-sm font-bold leading-5 sm:text-base">
+                                            <Link href={`/produk/${item.slug}`} className="line-clamp-2 min-h-[40px] text-sm font-bold leading-5 hover:underline sm:text-base">
                                                 {item.nama_produk}
-                                            </h3>
+                                            </Link>
                                             <div className="mt-3 flex items-center justify-between gap-2">
                                                 <div>
                                                     <p className="text-base font-black text-gray-950 sm:text-lg">
                                                         {formatRupiah(item.harga)}
                                                     </p>
-                                                    <p className="text-xs text-gray-500">Ukuran {item.ukuran}</p>
+                                                    <p className="text-xs text-gray-500">Ukuran {item.ukuran?.replaceAll(',', ', ')}</p>
                                                 </div>
                                                 <span className={`rounded-md px-2 py-1 text-xs font-bold ${Number(item.stok) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                                     Stok {item.stok}

@@ -1,15 +1,16 @@
 import AdminLayout from '@/Layouts/AdminLayout'
-import React, { useState } from 'react'
-import axios from 'axios'
+import React from 'react'
 import { useForm } from '@inertiajs/react'
 
 export default function Tambahproduk({ kode, kategori }) {
+    const ukuranOptions = ['S', 'M', 'L', 'XL', 'XXL']
 
     const { data, setData, post, put, delete: destroy, reset, processing } = useForm({
         kode: kode,
         nama: '',
         kategori_id: '',
-        ukuran: '',
+        ukuran: [],
+        keterangan: '',
         harga: '',
         diskon: '',
         stok: '',
@@ -20,6 +21,15 @@ export default function Tambahproduk({ kode, kategori }) {
 
     const handleChange = (e) => {
         setData(e.target.name, e.target.value);
+    };
+
+    const handleUkuranChange = (ukuran) => {
+        if (data.ukuran.includes(ukuran)) {
+            setData('ukuran', data.ukuran.filter((item) => item !== ukuran));
+            return;
+        }
+
+        setData('ukuran', [...data.ukuran, ukuran]);
     };
 
     const handleImageChange = (e) => {
@@ -79,14 +89,22 @@ export default function Tambahproduk({ kode, kategori }) {
                                     ))}
                                 </select>
 
-                                <select name="ukuran" onChange={handleChange}
-                                    className='input input-bordered mb-3' value={data.ukuran} required>
-                                    <option value="">Pilih Ukuran</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                </select>
+                                <div className="col-span-2 mb-3">
+                                    <p className="font-semibold mb-2">Ukuran Baju</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {ukuranOptions.map((ukuran) => (
+                                            <label key={ukuran} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${data.ukuran.includes(ukuran) ? 'border-primary bg-primary text-white' : 'border-base-300 bg-base-100'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="hidden"
+                                                    checked={data.ukuran.includes(ukuran)}
+                                                    onChange={() => handleUkuranChange(ukuran)}
+                                                />
+                                                {ukuran}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 <input type="number" name="harga" onChange={handleChange}
                                     className='input input-bordered mb-3'
@@ -99,6 +117,15 @@ export default function Tambahproduk({ kode, kategori }) {
                                 <input type="number" name="stok" onChange={handleChange}
                                     className='input input-bordered mb-3 col-span-2'
                                     placeholder='Stok' value={data.stok} required />
+
+                                <textarea
+                                    name="keterangan"
+                                    onChange={handleChange}
+                                    className="textarea textarea-bordered col-span-2 min-h-32"
+                                    placeholder="Keterangan produk"
+                                    value={data.keterangan}
+                                    required
+                                ></textarea>
 
                             </div>
                         </div>

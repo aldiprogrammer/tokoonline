@@ -5,13 +5,23 @@ use App\Http\Controllers\admin\KategoriController;
 use App\Http\Controllers\admin\PenggunaController;
 use App\Http\Controllers\admin\ProdukCotroller;
 use App\Http\Controllers\admin\RoleController;
+use App\Http\Controllers\App\CartController;
 use App\Http\Controllers\App\CustomerController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\LoginUserController;
 use App\Http\Controllers\Auth\PenggunaLoginController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
 
 Route::get('/', [CustomerController::class, 'index'])->name('toko');
 Route::get('/toko', [CustomerController::class, 'index'])->name('app.toko');
+Route::get('/produk/{slug}', [CustomerController::class, 'detail'])->name('app.produk.detail');
+Route::get('/loginuser', [LoginUserController::class, 'index'])->name('login.user');
+Route::post('/logoutuser', [LoginUserController::class, 'logout'])->name('logout.user');
+Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
 Route::get('/login', [PenggunaLoginController::class, 'show'])->name('login');
 Route::post('/login', [PenggunaLoginController::class, 'login'])->name('login.proses');
@@ -22,6 +32,10 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+    Route::put('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{id}', [CartController::class, 'delete'])->name('cart.delete');
+    Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

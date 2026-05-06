@@ -18,4 +18,20 @@ class CustomerController extends Controller
 
         return Inertia::render('App/Toko', compact('kategori', 'produk'));
     }
+
+    public function detail($slug)
+    {
+        $produk = Produk::with(['kategoriproduk', 'gambarproduk'])
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        $produkTerkait = Produk::with(['kategoriproduk', 'gambarproduk'])
+            ->where('id', '!=', $produk->id)
+            ->where('id_kategori', $produk->id_kategori)
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        return Inertia::render('App/DetailProduk', compact('produk', 'produkTerkait'));
+    }
 }

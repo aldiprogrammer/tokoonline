@@ -4,12 +4,14 @@ import React from 'react'
 import Swal from 'sweetalert2'
 
 export default function Produk({ produk, kategori }) {
+    const ukuranOptions = ['S', 'M', 'L', 'XL', 'XXL']
     const { data, setData, post, delete: destroy, reset, processing } = useForm({
         _method: 'put',
         id: 0,
         nama: '',
         kategori_id: '',
-        ukuran: '',
+        ukuran: [],
+        keterangan: '',
         harga: '',
         diskon: '',
         stok: '',
@@ -24,7 +26,8 @@ export default function Produk({ produk, kategori }) {
             id: item.id,
             nama: item.nama_produk,
             kategori_id: item.id_kategori,
-            ukuran: item.ukuran,
+            ukuran: item.ukuran ? item.ukuran.split(',') : [],
+            keterangan: item.keterangan || '',
             harga: item.harga,
             diskon: item.diskon,
             stok: item.stok,
@@ -33,6 +36,15 @@ export default function Produk({ produk, kategori }) {
 
         document.getElementById('modal_edit_produk').showModal();
     }
+
+    const handleUkuranChange = (ukuran) => {
+        if (data.ukuran.includes(ukuran)) {
+            setData('ukuran', data.ukuran.filter((item) => item !== ukuran));
+            return;
+        }
+
+        setData('ukuran', [...data.ukuran, ukuran]);
+    };
 
     const edit = (e) => {
         e.preventDefault();
@@ -118,18 +130,22 @@ export default function Produk({ produk, kategori }) {
                                         ))}
                                     </select>
 
-                                    <select
-                                        className="input input-bordered w-full"
-                                        value={data.ukuran}
-                                        onChange={(e) => setData('ukuran', e.target.value)}
-                                        required
-                                    >
-                                        <option value="">Pilih Ukuran</option>
-                                        <option value="S">S</option>
-                                        <option value="M">M</option>
-                                        <option value="L">L</option>
-                                        <option value="XL">XL</option>
-                                    </select>
+                                    <div className="col-span-2">
+                                        <p className="font-semibold mb-2">Ukuran Baju</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {ukuranOptions.map((ukuran) => (
+                                                <label key={ukuran} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${data.ukuran.includes(ukuran) ? 'border-primary bg-primary text-white' : 'border-base-300 bg-base-100'}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="hidden"
+                                                        checked={data.ukuran.includes(ukuran)}
+                                                        onChange={() => handleUkuranChange(ukuran)}
+                                                    />
+                                                    {ukuran}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
 
                                     <input
                                         type="number"
@@ -157,6 +173,14 @@ export default function Produk({ produk, kategori }) {
                                         onChange={(e) => setData('stok', e.target.value)}
                                         required
                                     />
+
+                                    <textarea
+                                        placeholder="Keterangan produk"
+                                        className="textarea textarea-bordered col-span-2 min-h-32"
+                                        value={data.keterangan}
+                                        onChange={(e) => setData('keterangan', e.target.value)}
+                                        required
+                                    ></textarea>
                                 </div>
 
                                 <div>
@@ -209,6 +233,7 @@ export default function Produk({ produk, kategori }) {
                                     <th>Nama</th>
                                     <th>Kategori</th>
                                     <th>Ukuran</th>
+                                    <th>Keterangan</th>
                                     <th>Harga</th>
                                     <th>Diskon</th>
                                     <th>Stok</th>
@@ -224,7 +249,14 @@ export default function Produk({ produk, kategori }) {
                                         <td>{item.kode_produk}</td>
                                         <td>{item.nama_produk}</td>
                                         <td>{item.kategoriproduk.kategori}</td>
-                                        <td>{item.ukuran}</td>
+                                        <td>
+                                            <div className="flex flex-wrap gap-1">
+                                                {item.ukuran?.split(',').map((ukuran) => (
+                                                    <span key={ukuran} className="badge badge-outline">{ukuran}</span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="max-w-48 truncate">{item.keterangan}</td>
                                         <td>{item.harga}</td>
                                         <td>{item.diskon}</td>
                                         <td>{item.stok}</td>

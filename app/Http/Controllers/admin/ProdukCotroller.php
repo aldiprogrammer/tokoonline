@@ -32,6 +32,14 @@ class ProdukCotroller extends Controller
     {
 
         $request->validate([
+            'nama' => 'required',
+            'kategori_id' => 'required',
+            'ukuran' => 'required|array',
+            'ukuran.*' => 'required|string',
+            'keterangan' => 'required',
+            'harga' => 'required',
+            'diskon' => 'required',
+            'stok' => 'required',
             'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
@@ -42,7 +50,8 @@ class ProdukCotroller extends Controller
         $pr->kode_produk = $request->kode;
         $pr->nama_produk = $request->nama;
         $pr->id_kategori = $request->kategori_id;
-        $pr->ukuran = $request->ukuran;
+        $pr->ukuran = implode(',', $request->ukuran);
+        $pr->keterangan = $request->keterangan;
         $pr->harga = $request->harga;
         $pr->diskon = $request->diskon;
         $pr->harga_diskon = 000;
@@ -71,7 +80,9 @@ class ProdukCotroller extends Controller
         $request->validate([
             'nama' => 'required',
             'kategori_id' => 'required',
-            'ukuran' => 'required',
+            'ukuran' => 'required|array',
+            'ukuran.*' => 'required|string',
+            'keterangan' => 'required',
             'harga' => 'required',
             'diskon' => 'required',
             'stok' => 'required',
@@ -82,7 +93,8 @@ class ProdukCotroller extends Controller
         $pr = Produk::findOrFail($id);
         $pr->nama_produk = $request->nama;
         $pr->id_kategori = $request->kategori_id;
-        $pr->ukuran = $request->ukuran;
+        $pr->ukuran = implode(',', $request->ukuran);
+        $pr->keterangan = $request->keterangan;
         $pr->harga = $request->harga;
         $pr->diskon = $request->diskon;
         $pr->slug = Str::slug($request->nama);
