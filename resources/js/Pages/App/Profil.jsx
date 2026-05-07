@@ -1,8 +1,9 @@
-import { Head, Link, usePage } from '@inertiajs/react'
+import { Head, Link, useForm, usePage } from '@inertiajs/react'
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 
 export default function Profil() {
+    const { data, setData, post, put, delete: destroy, reset, processing } = useForm({});
     const { auth, flash } = usePage().props
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [keranjang, setKeranjang] = useState([]);
@@ -17,6 +18,24 @@ export default function Profil() {
 
         }
 
+    }
+
+    const tambahqty = (id) => {
+        put('/tambahqty/' + id, {
+            onSuccess: () => {
+                reset();
+                listkeranjang()
+            }
+        });
+    }
+
+    const kurangqty = (id) => {
+        put('/kurangqty/' + id, {
+            onSuccess: () => {
+                reset();
+                listkeranjang()
+            }
+        });
     }
     useEffect(() => {
         listkeranjang()
@@ -103,7 +122,7 @@ export default function Profil() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto px-4 py-4">
-                                {keranjang !== null ? (
+                                {keranjang != '' ? (
                                     <div className="space-y-4">
                                         {keranjang.map((item, index) => (
                                             <div key={item.id} className="flex gap-3 rounded-lg border border-gray-200 p-3">
@@ -117,7 +136,7 @@ export default function Profil() {
                                                         <div className="flex items-center rounded-lg border border-gray-200">
                                                             <button
                                                                 type="button"
-                                                                // onClick={() => decreaseQty(item.id)}
+                                                                onClick={() => kurangqty(item.id)}
                                                                 className="grid h-8 w-8 place-items-center hover:bg-gray-100"
                                                             >
                                                                 <i className="fas fa-minus text-xs"></i>
@@ -125,7 +144,7 @@ export default function Profil() {
                                                             <span className="grid h-8 min-w-8 place-items-center text-sm font-bold">{item.qty}</span>
                                                             <button
                                                                 type="button"
-                                                                // onClick={() => increaseQty(item.id)}
+                                                                onClick={() => tambahqty(item.id)}
                                                                 className="grid h-8 w-8 place-items-center hover:bg-gray-100"
                                                             >
                                                                 <i className="fas fa-plus text-xs"></i>

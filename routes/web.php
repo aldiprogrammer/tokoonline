@@ -31,6 +31,10 @@ Route::post('/logout', [PenggunaLoginController::class, 'logout'])->name('logout
 
 Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
 Route::get('/keranjang/{iduser}', [KeranjangController::class, 'index'])->name('karanjang');
+Route::put('/tambahqty/{id}', [KeranjangController::class, 'tambahqty'])->name('tambahqty');
+Route::put('/kurangqty/{id}', [KeranjangController::class, 'kurangqty'])->name('kurangqty');
+
+
 
 
 Route::get('/dashboard', function () {
