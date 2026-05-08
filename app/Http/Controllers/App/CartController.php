@@ -4,8 +4,10 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Models\Keranjang;
+use App\Models\Order;
 use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
@@ -91,6 +93,37 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Keranjang dikosongkan',
+            'cart' => [],
+        ]);
+    }
+
+    public function checkout(Request $request)
+    {
+        $cart = Keranjang::where('id_user', $request->user()->id)->get();
+
+        abort_if($cart->isEmpty(), 422, 'Keranjang masih kosong');
+
+        $total = $cart->sum(function ($item) {
+            return (int) $item->harga * (int) $item->qty;
+        });
+
+        $order = DB::transaction(function () use ($request, $total) {
+            $order = Order::create([
+                'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . $request->user()->id,
+                'id_user' => $request->user()->id,
+                'total_harga' => $total,
+                'status_pembayaran' => 0,
+                'tanggal' => now()->format('Y-m-d'),
+            ]);
+
+            Keranjang::where('id_user', $request->user()->id)->delete();
+
+            return $order;
+        });
+
+        return response()->json([
+            'message' => 'Checkout berhasil dibuat',
+            'order' => $order,
             'cart' => [],
         ]);
     }

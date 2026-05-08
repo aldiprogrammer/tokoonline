@@ -29,10 +29,15 @@ Route::get('/login', [PenggunaLoginController::class, 'show'])->name('login');
 Route::post('/login', [PenggunaLoginController::class, 'login'])->name('login.proses');
 Route::post('/logout', [PenggunaLoginController::class, 'logout'])->name('logout');
 
-Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
+Route::middleware('auth')->group(function () {
+    Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
+    Route::post('/profil', [ProfilController::class, 'store'])->name('profil.store');
+});
 Route::get('/keranjang/{iduser}', [KeranjangController::class, 'index'])->name('karanjang');
 Route::put('/tambahqty/{id}', [KeranjangController::class, 'tambahqty'])->name('tambahqty');
 Route::put('/kurangqty/{id}', [KeranjangController::class, 'kurangqty'])->name('kurangqty');
+Route::delete('/hapusqty/{id}', [KeranjangController::class, 'hapus'])->name('hapusqty');
+
 
 
 
@@ -43,6 +48,7 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+    Route::post('/checkout', [CartController::class, 'checkout'])->name('checkout.store');
     Route::put('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{id}', [CartController::class, 'delete'])->name('cart.delete');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');

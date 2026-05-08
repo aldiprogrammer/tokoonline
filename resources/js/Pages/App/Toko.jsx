@@ -189,11 +189,11 @@ export default function Toko({ produk, kategori }) {
             return
         }
 
-        await sendCartRequest('/cart', 'DELETE')
+        const result = await sendCartRequest('/checkout', 'POST', customer)
         setIsCheckoutOpen(false)
         setIsCartOpen(false)
         setCustomer({ nama: '', hp: '', alamat: '' })
-        Swal.fire('Berhasil', `Checkout berhasil dibuat untuk ${customer.nama}. Total belanja: ${formatRupiah(cartTotal)}`, 'success')
+        Swal.fire('Berhasil', `Checkout ${result.order?.kode_order || ''} berhasil dibuat untuk ${customer.nama}. Total belanja: ${formatRupiah(cartTotal)}`, 'success')
     }
 
     const logoutUser = () => {
