@@ -405,10 +405,18 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             </div>
 
                             <div className="border-t border-gray-200 p-4">
-                                <div className="flex items-center justify-between">
+                                <div className="mb-4 flex items-center justify-between">
                                     <span className="text-sm font-semibold text-gray-600">Total</span>
                                     <span className="text-xl font-black">{formatRupiah(cartTotal)}</span>
                                 </div>
+                                <button
+                                    type="button"
+                                    disabled={cart.length === 0}
+                                    onClick={() => router.visit('/checkout')}
+                                    className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                >
+                                    Checkout
+                                </button>
                             </div>
                         </aside>
                     </div>

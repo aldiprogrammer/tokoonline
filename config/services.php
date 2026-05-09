@@ -41,4 +41,21 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+    ],
+
+    'rajaongkir' => [
+        'key' => env('RAJAONGKIR_API_KEY'),
+        'base_url' => env('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1'),
+        'origin_id' => env('RAJAONGKIR_ORIGIN_ID'),
+        'couriers' => env('RAJAONGKIR_COURIERS', 'jne:sicepat:jnt:anteraja:pos:tiki'),
+    ],
+
+    'checkout' => [
+        'default_weight' => env('CHECKOUT_DEFAULT_WEIGHT_GRAMS', 500),
+    ],
+
 ];

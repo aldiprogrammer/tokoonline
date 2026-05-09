@@ -7,6 +7,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
     const [activeMenu, setActiveMenu] = useState('profil')
     const [cart, setCart] = useState(initialCart ?? [])
     const [isCartOpen, setIsCartOpen] = useState(false)
+    const [payingOrderId, setPayingOrderId] = useState(null)
 
     const { data, setData, post, processing, errors } = useForm({
         nama: profil?.nama || auth?.user?.name || '',
@@ -51,7 +52,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
     const statusList = [
         { label: 'Pesanan dibuat', icon: 'fa-receipt' },
-        { label: 'Pembayaran dicek', icon: 'fa-wallet' },
+        { label: 'Pembayaran berhasil', icon: 'fa-wallet' },
         { label: 'Pesanan dikemas', icon: 'fa-box' },
         { label: 'Dalam pengiriman', icon: 'fa-truck-fast' },
         { label: 'Selesai', icon: 'fa-circle-check' },
@@ -59,9 +60,19 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
     const getStatusIndex = (status) => Math.min(Math.max(Number(status || 0), 0), statusList.length - 1)
 
-    const orderStatusText = (status) => {
-        const index = getStatusIndex(status)
+    const orderStatusText = (order) => {
+        if (Number(order?.status_pembayaran || 0) === 0) {
+            return 'Menunggu pembayaran'
+        }
+
+        const index = getStatusIndex(order?.status_pembayaran)
         return statusList[index]?.label || 'Pesanan dibuat'
+    }
+
+    const paymentBadgeClass = (order) => {
+        return Number(order?.status_pembayaran || 0) > 0
+            ? 'bg-emerald-50 text-emerald-700'
+            : 'bg-amber-50 text-amber-700'
     }
 
     const submitProfil = (e) => {
@@ -110,6 +121,38 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
     const removeFromCart = async (cartId) => {
         await sendCartRequest(`/cart/${cartId}`, 'DELETE')
+    }
+
+    const payOrder = async (orderId) => {
+        try {
+            setPayingOrderId(orderId)
+            const response = await fetch(`/orders/${orderId}/pay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                credentials: 'same-origin',
+            })
+
+            const result = await response.json()
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Gagal membuka pembayaran')
+            }
+
+            if (result.payment?.redirect_url) {
+                window.location.href = result.payment.redirect_url
+                return
+            }
+
+            Swal.fire('Info', result.message || 'Link pembayaran belum tersedia.', 'info')
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        } finally {
+            setPayingOrderId(null)
+        }
     }
 
     const logoutUser = () => {
@@ -278,7 +321,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                         <div>
                                             <div className="mb-6 rounded-lg bg-gray-50 p-4">
                                                 <p className="text-sm text-gray-500">Status saat ini</p>
-                                                <p className="mt-1 text-2xl font-black">{orderStatusText(latestOrder.status_pembayaran)}</p>
+                                                <p className="mt-1 text-2xl font-black">{orderStatusText(latestOrder)}</p>
                                                 <p className="mt-1 text-sm text-gray-600">Tanggal order: {latestOrder.tanggal || '-'}</p>
                                             </div>
 
@@ -317,6 +360,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                                         <th className="py-3 pr-4">Tanggal</th>
                                                         <th className="py-3 pr-4">Total</th>
                                                         <th className="py-3 pr-4">Status</th>
+                                                        <th className="py-3 pr-4">Aksi</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -326,9 +370,23 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                                             <td className="py-4 pr-4 text-gray-600">{order.tanggal || '-'}</td>
                                                             <td className="py-4 pr-4 font-black">{formatRupiah(order.total_harga)}</td>
                                                             <td className="py-4 pr-4">
-                                                                <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-bold text-gray-700">
-                                                                    {orderStatusText(order.status_pembayaran)}
+                                                                <span className={`rounded-md px-2 py-1 text-xs font-bold ${paymentBadgeClass(order)}`}>
+                                                                    {orderStatusText(order)}
                                                                 </span>
+                                                            </td>
+                                                            <td className="py-4 pr-4">
+                                                                {Number(order.status_pembayaran || 0) === 0 ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => payOrder(order.id)}
+                                                                        disabled={payingOrderId === order.id}
+                                                                        className="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                                                    >
+                                                                        {payingOrderId === order.id ? 'Membuka...' : 'Bayar Sekarang'}
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-xs font-semibold text-gray-400">Lunas</span>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -400,10 +458,18 @@ export default function Profil({ profil, alamat, orders = [] }) {
                             </div>
 
                             <div className="border-t border-gray-200 p-4">
-                                <div className="flex items-center justify-between">
+                                <div className="mb-4 flex items-center justify-between">
                                     <span className="text-sm font-semibold text-gray-600">Total</span>
                                     <span className="text-xl font-black">{formatRupiah(cartTotal)}</span>
                                 </div>
+                                <button
+                                    type="button"
+                                    disabled={cart.length === 0}
+                                    onClick={() => router.visit('/checkout')}
+                                    className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                >
+                                    Checkout
+                                </button>
                             </div>
                         </aside>
                     </div>

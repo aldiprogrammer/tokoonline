@@ -500,7 +500,7 @@ export default function Toko({ produk, kategori }) {
                                 <button
                                     type="button"
                                     disabled={cart.length === 0}
-                                    onClick={() => setIsCheckoutOpen(true)}
+                                    onClick={() => router.visit('/checkout')}
                                     className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     Checkout

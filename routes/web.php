@@ -6,6 +6,7 @@ use App\Http\Controllers\admin\PenggunaController;
 use App\Http\Controllers\admin\ProdukCotroller;
 use App\Http\Controllers\admin\RoleController;
 use App\Http\Controllers\App\CartController;
+use App\Http\Controllers\App\CheckoutController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\app\KeranjangController;
 use App\Http\Controllers\app\ProfilController;
@@ -48,7 +49,11 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
-    Route::post('/checkout', [CartController::class, 'checkout'])->name('checkout.store');
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/destinations', [CheckoutController::class, 'searchDestination'])->name('checkout.destinations');
+    Route::post('/checkout/shipping-cost', [CheckoutController::class, 'shippingCost'])->name('checkout.shipping-cost');
+    Route::post('/orders/{order}/pay', [CheckoutController::class, 'pay'])->name('orders.pay');
     Route::put('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{id}', [CartController::class, 'delete'])->name('cart.delete');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
@@ -56,6 +61,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::post('/midtrans/notification', [CheckoutController::class, 'notification'])->name('midtrans.notification');
 
 Route::middleware('pengguna.session')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
