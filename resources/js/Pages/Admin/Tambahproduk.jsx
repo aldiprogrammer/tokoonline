@@ -5,7 +5,7 @@ import { useForm } from '@inertiajs/react'
 export default function Tambahproduk({ kode, kategori }) {
     const ukuranOptions = ['S', 'M', 'L', 'XL', 'XXL']
 
-    const { data, setData, post, put, delete: destroy, reset, processing } = useForm({
+    const { data, setData, post, reset, processing, errors } = useForm({
         kode: kode,
         nama: '',
         kategori_id: '',
@@ -14,7 +14,6 @@ export default function Tambahproduk({ kode, kategori }) {
         harga: '',
         diskon: '',
         stok: '',
-        image: null,
         images: [],
     })
 
@@ -34,7 +33,6 @@ export default function Tambahproduk({ kode, kategori }) {
 
     const handleImageChange = (e) => {
         setData('images', Array.from(e.target.files));
-        setData('image', e.target.files[0]);
     };
 
     const removeImage = (index) => {
@@ -47,6 +45,7 @@ export default function Tambahproduk({ kode, kategori }) {
         setData('kode', kode);
         e.preventDefault();
         post('/admin/tambahproduk', {
+            forceFormData: true,
             onSuccess: () => {
                 reset();
                 console.log('berhsil');
@@ -137,10 +136,13 @@ export default function Tambahproduk({ kode, kategori }) {
                             <input
                                 type="file"
                                 multiple
-
+                                accept="image/jpeg,image/png,image/jpg"
                                 onChange={handleImageChange}
                                 className="file-input file-input-bordered w-full mb-4" required
                             />
+                            {errors.images && (
+                                <p className="mb-3 text-sm text-red-500">{errors.images}</p>
+                            )}
 
                             {/* PREVIEW */}
                             <div className="flex flex-wrap gap-2">

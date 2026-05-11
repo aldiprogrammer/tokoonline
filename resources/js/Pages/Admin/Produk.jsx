@@ -46,6 +46,16 @@ export default function Produk({ produk, kategori }) {
         setData('ukuran', [...data.ukuran, ukuran]);
     };
 
+    const handleImageChange = (e) => {
+        setData('images', Array.from(e.target.files));
+    };
+
+    const removeSelectedImage = (index) => {
+        const newImages = [...data.images];
+        newImages.splice(index, 1);
+        setData('images', newImages);
+    };
+
     const edit = (e) => {
         e.preventDefault();
 
@@ -203,9 +213,33 @@ export default function Produk({ produk, kategori }) {
                                     <input
                                         type="file"
                                         multiple
+                                        accept="image/jpeg,image/png,image/jpg"
                                         className="file-input file-input-bordered w-full"
-                                        onChange={(e) => setData('images', Array.from(e.target.files))}
+                                        onChange={handleImageChange}
                                     />
+                                    {data.images.length > 0 && (
+                                        <div className="mt-3">
+                                            <p className="mb-2 text-sm font-semibold">Gambar Baru</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {data.images.map((file, index) => (
+                                                    <div key={`${file.name}-${index}`} className="relative">
+                                                        <img
+                                                            src={URL.createObjectURL(file)}
+                                                            alt=""
+                                                            className="w-20 h-20 object-cover rounded-lg border"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeSelectedImage(index)}
+                                                            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded"
+                                                        >
+                                                            X
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="modal-action">

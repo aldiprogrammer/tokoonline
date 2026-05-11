@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kategori;
+use App\Models\ProductReview;
 use App\Models\Produk;
 use Inertia\Inertia;
 
@@ -32,6 +33,17 @@ class CustomerController extends Controller
             ->limit(4)
             ->get();
 
-        return Inertia::render('App/DetailProduk', compact('produk', 'produkTerkait'));
+        $reviews = ProductReview::with('user')
+            ->where('produk_id', $produk->id)
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        $reviewSummary = [
+            'count' => ProductReview::where('produk_id', $produk->id)->count(),
+            'average' => round((float) ProductReview::where('produk_id', $produk->id)->avg('rating'), 1),
+        ];
+
+        return Inertia::render('App/DetailProduk', compact('produk', 'produkTerkait', 'reviews', 'reviewSummary'));
     }
 }

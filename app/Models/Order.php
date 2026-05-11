@@ -25,6 +25,17 @@ class Order extends Model
         'midtrans_redirect_url',
         'status_pembayaran',
         'status_midtrans',
+        'status_pengiriman',
         'tanggal',
     ];
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
 }

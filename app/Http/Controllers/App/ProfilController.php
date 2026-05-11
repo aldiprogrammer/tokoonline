@@ -19,11 +19,19 @@ class ProfilController extends Controller
 
         $profil = Profil::where('id_user', $request->user()->id)->first();
         $alamat = Alamat::where('id_user', $request->user()->id)->first();
-        $orders = Order::where('id_user', $request->user()->id)
+        $orders = Order::with(['items', 'reviews'])
+            ->where('id_user', $request->user()->id)
             ->latest()
             ->get();
 
-        return Inertia::render('App/Profil', compact('profil', 'alamat', 'orders'));
+        return Inertia::render('App/Profil', [
+            'profil' => $profil,
+            'alamat' => $alamat,
+            'orders' => $orders,
+            'profileConfig' => [
+                'rajaongkirReady' => filled(config('services.rajaongkir.key')),
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -37,6 +45,8 @@ class ProfilController extends Controller
             'kelurahan' => 'required|string|max:50',
             'alamat' => 'required|string|max:255',
             'kode_pos' => 'nullable|string|max:30',
+            'rajaongkir_destination_id' => 'required|string|max:30',
+            'rajaongkir_destination_label' => 'required|string|max:255',
         ]);
 
         $profil = Profil::updateOrCreate(
@@ -58,6 +68,8 @@ class ProfilController extends Controller
                 'kelurahan' => $validated['kelurahan'],
                 'alamat' => $validated['alamat'],
                 'kode_pos' => $validated['kode_pos'] ?? '',
+                'rajaongkir_destination_id' => $validated['rajaongkir_destination_id'] ?? null,
+                'rajaongkir_destination_label' => $validated['rajaongkir_destination_label'] ?? null,
             ]
         );
 

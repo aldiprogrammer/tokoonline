@@ -107,14 +107,29 @@ class CartController extends Controller
             return (int) $item->harga * (int) $item->qty;
         });
 
-        $order = DB::transaction(function () use ($request, $total) {
+        $order = DB::transaction(function () use ($request, $cart, $total) {
             $order = Order::create([
                 'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . $request->user()->id,
                 'id_user' => $request->user()->id,
                 'total_harga' => $total,
                 'status_pembayaran' => 0,
+                'status_pengiriman' => 0,
                 'tanggal' => now()->format('Y-m-d'),
             ]);
+
+            $cart->load('produk.gambarproduk')->each(function ($item) use ($order) {
+                $order->items()->create([
+                    'produk_id' => $item->id_produk,
+                    'nama_produk' => $item->produk?->nama_produk ?: 'Produk',
+                    'ukuran' => $item->ukuran,
+                    'harga' => (int) $item->harga,
+                    'qty' => (int) $item->qty,
+                    'total_harga' => (int) $item->harga * (int) $item->qty,
+                    'image' => $item->produk?->gambarproduk?->first()?->image
+                        ? '/storage/' . $item->produk->gambarproduk->first()->image
+                        : null,
+                ]);
+            });
 
             Keranjang::where('id_user', $request->user()->id)->delete();
 

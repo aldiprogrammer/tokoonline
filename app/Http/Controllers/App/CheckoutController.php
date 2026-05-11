@@ -121,7 +121,7 @@ class CheckoutController extends Controller
         $kodeOrder = 'ORD-' . now()->format('YmdHis') . '-' . $request->user()->id;
         $midtransOrderId = $kodeOrder . '-' . Str::upper(Str::random(5));
 
-        $order = DB::transaction(function () use ($request, $validated, $subtotal, $grandTotal, $kodeOrder, $midtransOrderId) {
+        $order = DB::transaction(function () use ($request, $validated, $cart, $subtotal, $grandTotal, $kodeOrder, $midtransOrderId) {
             $order = Order::create([
                 'kode_order' => $kodeOrder,
                 'id_user' => $request->user()->id,
@@ -139,8 +139,23 @@ class CheckoutController extends Controller
                 'midtrans_order_id' => $midtransOrderId,
                 'status_pembayaran' => 0,
                 'status_midtrans' => 'pending',
+                'status_pengiriman' => 0,
                 'tanggal' => now()->format('Y-m-d'),
             ]);
+
+            $cart->each(function ($item) use ($order) {
+                $order->items()->create([
+                    'produk_id' => $item->id_produk,
+                    'nama_produk' => $item->produk?->nama_produk ?: 'Produk',
+                    'ukuran' => $item->ukuran,
+                    'harga' => (int) $item->harga,
+                    'qty' => (int) $item->qty,
+                    'total_harga' => (int) $item->harga * (int) $item->qty,
+                    'image' => $item->produk?->gambarproduk?->first()?->image
+                        ? '/storage/' . $item->produk->gambarproduk->first()->image
+                        : null,
+                ]);
+            });
 
             Keranjang::where('id_user', $request->user()->id)->delete();
 

@@ -31,4 +31,9 @@ class Produk extends Model
     {
         return $this->hasMany(Gambarprodk::class, 'id_produk');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'produk_id');
+    }
 }

@@ -1,13 +1,21 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 
-export default function Profil({ profil, alamat, orders = [] }) {
+export default function Profil({ profil, alamat, orders = [], profileConfig }) {
     const { auth, flash, cart: initialCart } = usePage().props
     const [activeMenu, setActiveMenu] = useState('profil')
     const [cart, setCart] = useState(initialCart ?? [])
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [payingOrderId, setPayingOrderId] = useState(null)
+    const [reviewForms, setReviewForms] = useState({})
+    const [destinationSearch, setDestinationSearch] = useState(alamat?.rajaongkir_destination_label || alamat?.kabupaten || '')
+    const [destinations, setDestinations] = useState([])
+    const [destinationOpen, setDestinationOpen] = useState(false)
+    const [destinationError, setDestinationError] = useState('')
+    const [loadingDestination, setLoadingDestination] = useState(false)
+    const destinationRequestRef = useRef(0)
+    const rajaReady = profileConfig?.rajaongkirReady
 
     const { data, setData, post, processing, errors } = useForm({
         nama: profil?.nama || auth?.user?.name || '',
@@ -18,6 +26,8 @@ export default function Profil({ profil, alamat, orders = [] }) {
         kelurahan: alamat?.kelurahan || '',
         alamat: alamat?.alamat || '',
         kode_pos: alamat?.kode_pos || '',
+        rajaongkir_destination_id: alamat?.rajaongkir_destination_id || '',
+        rajaongkir_destination_label: alamat?.rajaongkir_destination_label || '',
     })
 
     useEffect(() => {
@@ -52,10 +62,9 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
     const statusList = [
         { label: 'Pesanan dibuat', icon: 'fa-receipt' },
-        { label: 'Pembayaran berhasil', icon: 'fa-wallet' },
-        { label: 'Pesanan dikemas', icon: 'fa-box' },
-        { label: 'Dalam pengiriman', icon: 'fa-truck-fast' },
-        { label: 'Selesai', icon: 'fa-circle-check' },
+        { label: 'Sudah dikemas', icon: 'fa-box' },
+        { label: 'Dalam perjalanan', icon: 'fa-truck-fast' },
+        { label: 'Sudah sampai', icon: 'fa-circle-check' },
     ]
 
     const getStatusIndex = (status) => Math.min(Math.max(Number(status || 0), 0), statusList.length - 1)
@@ -65,7 +74,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
             return 'Menunggu pembayaran'
         }
 
-        const index = getStatusIndex(order?.status_pembayaran)
+        const index = getStatusIndex(order?.status_pengiriman)
         return statusList[index]?.label || 'Pesanan dibuat'
     }
 
@@ -78,6 +87,104 @@ export default function Profil({ profil, alamat, orders = [] }) {
     const submitProfil = (e) => {
         e.preventDefault()
         post('/profil', { preserveScroll: true })
+    }
+
+    const requestJson = async (url) => {
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+            credentials: 'same-origin',
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Permintaan gagal diproses')
+        }
+
+        return result
+    }
+
+    const searchDestination = async (keyword = destinationSearch) => {
+        if (!rajaReady) {
+            setDestinationError('API key RajaOngkir belum diatur.')
+            setDestinationOpen(true)
+            return
+        }
+
+        const searchKeyword = keyword.trim()
+
+        if (searchKeyword.length < 3) {
+            setDestinations([])
+            setDestinationOpen(false)
+            return
+        }
+
+        const requestId = destinationRequestRef.current + 1
+        destinationRequestRef.current = requestId
+
+        try {
+            setLoadingDestination(true)
+            setDestinationError('')
+            const result = await requestJson(`/checkout/destinations?search=${encodeURIComponent(searchKeyword)}`)
+
+            if (requestId !== destinationRequestRef.current) {
+                return
+            }
+
+            setDestinations(result.data || [])
+            setDestinationOpen(true)
+        } catch (error) {
+            if (requestId === destinationRequestRef.current) {
+                setDestinations([])
+                setDestinationOpen(true)
+                setDestinationError(error.message)
+            }
+        } finally {
+            if (requestId === destinationRequestRef.current) {
+                setLoadingDestination(false)
+            }
+        }
+    }
+
+    useEffect(() => {
+        const searchKeyword = destinationSearch.trim()
+
+        if (!rajaReady || searchKeyword.length < 3 || data.rajaongkir_destination_label === searchKeyword) {
+            setDestinations([])
+            setDestinationError('')
+            setDestinationOpen(false)
+            setLoadingDestination(false)
+            return
+        }
+
+        const timer = window.setTimeout(() => {
+            searchDestination(searchKeyword)
+        }, 450)
+
+        return () => window.clearTimeout(timer)
+    }, [destinationSearch, rajaReady, data.rajaongkir_destination_label])
+
+    const chooseDestination = (destination) => {
+        const label = destination.label || ''
+
+        setDestinationSearch(label)
+        setDestinations([])
+        setDestinationOpen(false)
+        setDestinationError('')
+        setData({
+            ...data,
+            provinsi: destination.province_name || data.provinsi,
+            kabupaten: destination.city_name || data.kabupaten,
+            kecamatan: destination.district_name || data.kecamatan,
+            kelurahan: destination.subdistrict_name || data.kelurahan,
+            kode_pos: destination.zip_code || data.kode_pos,
+            rajaongkir_destination_id: String(destination.id || ''),
+            rajaongkir_destination_label: label,
+        })
     }
 
     const sendCartRequest = async (url, method, payload = null) => {
@@ -155,6 +262,43 @@ export default function Profil({ profil, alamat, orders = [] }) {
         }
     }
 
+    const reviewKey = (orderId, produkId) => `${orderId}-${produkId}`
+
+    const getReviewForm = (orderId, produkId) => {
+        return reviewForms[reviewKey(orderId, produkId)] || { rating: 5, komentar: '' }
+    }
+
+    const setReviewForm = (orderId, produkId, values) => {
+        const key = reviewKey(orderId, produkId)
+        setReviewForms({
+            ...reviewForms,
+            [key]: {
+                ...getReviewForm(orderId, produkId),
+                ...values,
+            },
+        })
+    }
+
+    const hasReview = (order, produkId) => {
+        return order.reviews?.some((review) => Number(review.produk_id) === Number(produkId))
+    }
+
+    const submitReview = (order, item) => {
+        const form = getReviewForm(order.id, item.produk_id)
+
+        router.post('/product-reviews', {
+            order_id: order.id,
+            produk_id: item.produk_id,
+            rating: Number(form.rating),
+            komentar: form.komentar,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setReviewForm(order.id, item.produk_id, { rating: 5, komentar: '' })
+            },
+        })
+    }
+
     const logoutUser = () => {
         router.post('/logoutuser')
     }
@@ -169,11 +313,11 @@ export default function Profil({ profil, alamat, orders = [] }) {
         <>
             <Head title="Profil Customer" />
 
-            <div className="min-h-screen bg-white text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+            <div className="min-h-screen bg-gray-50 text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
                         <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gray-950 text-white">
+                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
                                 <i className="fas fa-shirt"></i>
                             </span>
                             <span className="truncate">FEBRINOX</span>
@@ -183,7 +327,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-lg bg-gray-950 text-white hover:bg-gray-800"
+                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
                             >
                                 <i className="fas fa-bag-shopping"></i>
                                 <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
@@ -191,7 +335,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                 </span>
                             </button>
 
-                            <div className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 px-2 sm:px-3">
+                            <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
                                 {auth.user.avatar ? (
                                     <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
                                 ) : (
@@ -205,7 +349,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                             <button
                                 type="button"
                                 onClick={logoutUser}
-                                className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 text-red-600 hover:bg-red-50 sm:grid"
+                                className="hidden h-10 w-10 place-items-center rounded-full border border-gray-200 bg-white text-red-600 shadow-sm hover:bg-red-50 sm:grid"
                             >
                                 <i className="fas fa-right-from-bracket"></i>
                             </button>
@@ -220,27 +364,27 @@ export default function Profil({ profil, alamat, orders = [] }) {
                         <span>Profil</span>
                     </div>
 
-                    <section className="mb-6 border-b border-gray-200 pb-6">
-                        <p className="text-sm font-semibold text-gray-500">Akun Customer</p>
+                    <section className="mb-6 rounded-3xl bg-gray-950 p-5 text-white shadow-xl shadow-gray-950/10 sm:p-7">
+                        <p className="text-sm font-semibold text-white/60">Akun Customer</p>
                         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <h1 className="text-3xl font-black">Profil dan pesanan kamu</h1>
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
                                     Lengkapi data diri dan alamat supaya checkout serta pengiriman pesanan lebih cepat diproses.
                                 </p>
                             </div>
-                            <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-gray-200 text-center text-sm">
+                            <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-white/15 bg-white/10 text-center text-sm backdrop-blur">
                                 <div className="px-4 py-3">
                                     <p className="font-black">{orders.length}</p>
-                                    <p className="text-xs text-gray-500">Order</p>
+                                    <p className="text-xs text-white/60">Order</p>
                                 </div>
-                                <div className="border-x border-gray-200 px-4 py-3">
+                                {/* <div className="border-x border-white/15 px-4 py-3">
                                     <p className="font-black">{Number(profil?.point || 0)}</p>
-                                    <p className="text-xs text-gray-500">Point</p>
-                                </div>
+                                    <p className="text-xs text-white/60">Point</p>
+                                </div> */}
                                 <div className="px-4 py-3">
                                     <p className="font-black">{cartCount}</p>
-                                    <p className="text-xs text-gray-500">Keranjang</p>
+                                    <p className="text-xs text-white/60">Keranjang</p>
                                 </div>
                             </div>
                         </div>
@@ -248,13 +392,13 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
                     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
                         <aside className="lg:sticky lg:top-24 lg:self-start">
-                            <div className="grid gap-2 rounded-lg border border-gray-200 p-2">
+                            <div className="grid gap-2 rounded-3xl border border-gray-200 bg-white p-2 shadow-sm">
                                 {menuItems.map((item) => (
                                     <button
                                         key={item.key}
                                         type="button"
                                         onClick={() => setActiveMenu(item.key)}
-                                        className={`flex h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-bold ${activeMenu === item.key ? 'bg-gray-950 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                        className={`flex h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-bold transition ${activeMenu === item.key ? 'bg-gray-950 text-white shadow-lg shadow-gray-950/15' : 'text-gray-700 hover:bg-gray-100'}`}
                                     >
                                         <i className={`fas ${item.icon} w-5 text-center`}></i>
                                         {item.label}
@@ -265,7 +409,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
                         <section>
                             {activeMenu === 'profil' && (
-                                <form onSubmit={submitProfil} className="rounded-lg border border-gray-200 p-4 sm:p-6">
+                                <form onSubmit={submitProfil} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
                                     <div className="mb-5 flex items-center justify-between gap-4">
                                         <div>
                                             <h2 className="text-xl font-black">Data diri customer</h2>
@@ -274,26 +418,99 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                         <button
                                             type="submit"
                                             disabled={processing}
-                                            className="rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                            className="rounded-full bg-gray-950 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                                         >
                                             {processing ? 'Menyimpan...' : 'Simpan'}
                                         </button>
                                     </div>
 
                                     <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="relative md:col-span-2">
+                                            <label className="text-sm font-bold text-gray-700">Cari Alamat Anda</label>
+                                            <div className="relative mt-2">
+                                                <input
+                                                    type="text"
+                                                    value={destinationSearch}
+                                                    onChange={(e) => {
+                                                        setDestinationSearch(e.target.value)
+                                                        setData({
+                                                            ...data,
+                                                            rajaongkir_destination_id: '',
+                                                            rajaongkir_destination_label: '',
+                                                        })
+                                                        setDestinationOpen(e.target.value.trim().length >= 3)
+                                                    }}
+                                                    onFocus={() => {
+                                                        if (destinations.length > 0 || destinationError) {
+                                                            setDestinationOpen(true)
+                                                        }
+                                                    }}
+                                                    onBlur={() => window.setTimeout(() => setDestinationOpen(false), 150)}
+                                                    className="h-12 w-full rounded-2xl border border-gray-300 pl-11 pr-11 text-sm outline-none transition focus:border-gray-950 focus:ring-2 focus:ring-gray-950/10"
+                                                    placeholder="Ketik kecamatan, kota, kelurahan, atau kode pos"
+                                                    autoComplete="off"
+                                                />
+                                                <i className="fas fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400"></i>
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                                    {loadingDestination ? (
+                                                        <i className="fas fa-circle-notch fa-spin text-sm"></i>
+                                                    ) : (
+                                                        <i className="fas fa-chevron-down text-xs"></i>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {destinationOpen && (
+                                                <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white py-2 shadow-xl shadow-gray-950/10">
+                                                    {destinations.length > 0 ? (
+                                                        destinations.map((destination) => (
+                                                            <button
+                                                                key={destination.id}
+                                                                type="button"
+                                                                onMouseDown={(e) => e.preventDefault()}
+                                                                onClick={() => chooseDestination(destination)}
+                                                                className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm text-gray-800 transition hover:bg-gray-50"
+                                                            >
+                                                                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gray-100 text-gray-600">
+                                                                    <i className="fas fa-location-dot text-xs"></i>
+                                                                </span>
+                                                                <span className="min-w-0 flex-1">
+                                                                    <span className="block font-black leading-5">{destination.label}</span>
+                                                                    <span className="mt-1 block text-xs text-gray-500">{destination.zip_code || 'Kode pos belum tersedia'}</span>
+                                                                </span>
+                                                            </button>
+                                                        ))
+                                                    ) : (
+                                                        <div className="px-4 py-4 text-sm text-gray-500">
+                                                            {destinationError || (loadingDestination ? 'Mencari alamat...' : 'Ketik minimal 3 karakter untuk mencari alamat.')}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* {data.rajaongkir_destination_id ? (
+                                                <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                                                    <p className="font-black">ID RajaOngkir: {data.rajaongkir_destination_id}</p>
+                                                    <p className="mt-1 leading-5">{data.rajaongkir_destination_label}</p>
+                                                </div>
+                                            ) : (
+                                                <p className="mt-2 text-xs font-semibold text-amber-700">Pilih alamat dari RajaOngkir agar ongkir di checkout bisa otomatis.</p>
+                                            )} */}
+                                            {errors.rajaongkir_destination_id && <p className="mt-1 text-xs font-semibold text-red-600">{errors.rajaongkir_destination_id}</p>}
+                                        </div>
                                         <Input label="Nama lengkap" value={data.nama} error={errors.nama} onChange={(value) => setData('nama', value)} />
                                         <Input label="Nomor WhatsApp" type="tel" value={data.whatsapp} error={errors.whatsapp} onChange={(value) => setData('whatsapp', value)} />
                                         <Input label="Provinsi" value={data.provinsi} error={errors.provinsi} onChange={(value) => setData('provinsi', value)} />
                                         <Input label="Kabupaten / Kota" value={data.kabupaten} error={errors.kabupaten} onChange={(value) => setData('kabupaten', value)} />
                                         <Input label="Kecamatan" value={data.kecamatan} error={errors.kecamatan} onChange={(value) => setData('kecamatan', value)} />
-                                        <Input label="Kelurahan" value={data.kelurahan} error={errors.kelurahan} onChange={(value) => setData('kelurahan', value)} />
+                                        <Input label="Kelurahan / Desa" value={data.kelurahan} error={errors.kelurahan} onChange={(value) => setData('kelurahan', value)} />
                                         <Input label="Kode pos" value={data.kode_pos} error={errors.kode_pos} onChange={(value) => setData('kode_pos', value)} />
                                         <div className="md:col-span-2">
                                             <label className="text-sm font-bold text-gray-700">Alamat lengkap</label>
                                             <textarea
                                                 value={data.alamat}
                                                 onChange={(e) => setData('alamat', e.target.value)}
-                                                className="mt-2 min-h-28 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-950"
+                                                className="mt-2 min-h-28 w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-950"
                                                 placeholder="Nama jalan, nomor rumah, RT/RW, patokan"
                                                 required
                                             ></textarea>
@@ -304,14 +521,14 @@ export default function Profil({ profil, alamat, orders = [] }) {
                             )}
 
                             {activeMenu === 'pengiriman' && (
-                                <div className="rounded-lg border border-gray-200 p-4 sm:p-6">
+                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
                                     <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                                         <div>
                                             <h2 className="text-xl font-black">Proses pengiriman</h2>
                                             <p className="mt-1 text-sm text-gray-500">Pantau posisi pesanan terakhir dari status order.</p>
                                         </div>
                                         {latestOrder && (
-                                            <span className="rounded-lg bg-gray-950 px-3 py-2 text-sm font-bold text-white">
+                                            <span className="rounded-full bg-gray-950 px-3 py-2 text-sm font-bold text-white">
                                                 {latestOrder.kode_order}
                                             </span>
                                         )}
@@ -319,18 +536,18 @@ export default function Profil({ profil, alamat, orders = [] }) {
 
                                     {latestOrder ? (
                                         <div>
-                                            <div className="mb-6 rounded-lg bg-gray-50 p-4">
+                                            <div className="mb-6 rounded-2xl bg-gray-50 p-4">
                                                 <p className="text-sm text-gray-500">Status saat ini</p>
                                                 <p className="mt-1 text-2xl font-black">{orderStatusText(latestOrder)}</p>
                                                 <p className="mt-1 text-sm text-gray-600">Tanggal order: {latestOrder.tanggal || '-'}</p>
                                             </div>
 
-                                            <div className="grid gap-3 md:grid-cols-5">
+                                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                                 {statusList.map((status, index) => {
-                                                    const isDone = index <= getStatusIndex(latestOrder.status_pembayaran)
+                                                    const isDone = index <= getStatusIndex(latestOrder.status_pengiriman)
 
                                                     return (
-                                                        <div key={status.label} className={`rounded-lg border p-4 ${isDone ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-500'}`}>
+                                                        <div key={status.label} className={`rounded-2xl border p-4 ${isDone ? 'border-gray-950 bg-gray-950 text-white shadow-lg shadow-gray-950/15' : 'border-gray-200 bg-white text-gray-500'}`}>
                                                             <i className={`fas ${status.icon} mb-3 text-lg`}></i>
                                                             <p className="text-sm font-black">{status.label}</p>
                                                         </div>
@@ -345,7 +562,7 @@ export default function Profil({ profil, alamat, orders = [] }) {
                             )}
 
                             {activeMenu === 'pembelian' && (
-                                <div className="rounded-lg border border-gray-200 p-4 sm:p-6">
+                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
                                     <div className="mb-5">
                                         <h2 className="text-xl font-black">Data pembelian customer</h2>
                                         <p className="mt-1 text-sm text-gray-500">Riwayat order yang pernah dibuat oleh akun ini.</p>
@@ -365,30 +582,92 @@ export default function Profil({ profil, alamat, orders = [] }) {
                                                 </thead>
                                                 <tbody>
                                                     {orders.map((order) => (
-                                                        <tr key={order.id} className="border-b border-gray-100">
-                                                            <td className="py-4 pr-4 font-black">{order.kode_order}</td>
-                                                            <td className="py-4 pr-4 text-gray-600">{order.tanggal || '-'}</td>
-                                                            <td className="py-4 pr-4 font-black">{formatRupiah(order.total_harga)}</td>
-                                                            <td className="py-4 pr-4">
-                                                                <span className={`rounded-md px-2 py-1 text-xs font-bold ${paymentBadgeClass(order)}`}>
-                                                                    {orderStatusText(order)}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 pr-4">
-                                                                {Number(order.status_pembayaran || 0) === 0 ? (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => payOrder(order.id)}
-                                                                        disabled={payingOrderId === order.id}
-                                                                        className="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
-                                                                    >
-                                                                        {payingOrderId === order.id ? 'Membuka...' : 'Bayar Sekarang'}
-                                                                    </button>
-                                                                ) : (
-                                                                    <span className="text-xs font-semibold text-gray-400">Lunas</span>
-                                                                )}
-                                                            </td>
-                                                        </tr>
+                                                        <React.Fragment key={order.id}>
+                                                            <tr className="border-b border-gray-100">
+                                                                <td className="py-4 pr-4 font-black">{order.kode_order}</td>
+                                                                <td className="py-4 pr-4 text-gray-600">{order.tanggal || '-'}</td>
+                                                                <td className="py-4 pr-4 font-black">{formatRupiah(order.total_harga)}</td>
+                                                                <td className="py-4 pr-4">
+                                                                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentBadgeClass(order)}`}>
+                                                                        {orderStatusText(order)}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-4 pr-4">
+                                                                    {Number(order.status_pembayaran || 0) === 0 ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => payOrder(order.id)}
+                                                                            disabled={payingOrderId === order.id}
+                                                                            className="rounded-full bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                                                        >
+                                                                            {payingOrderId === order.id ? 'Membuka...' : 'Bayar Sekarang'}
+                                                                        </button>
+                                                                    ) : (
+                                                                        <span className="text-xs font-semibold text-gray-400">Lunas</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                            {Number(order.status_pengiriman || 0) === 3 && order.items?.length > 0 && (
+                                                                <tr className="border-b border-gray-100 bg-gray-50/70">
+                                                                    <td colSpan="5" className="py-4">
+                                                                        <div className="grid gap-3">
+                                                                            {order.items.map((item) => {
+                                                                                const reviewed = hasReview(order, item.produk_id)
+                                                                                const form = getReviewForm(order.id, item.produk_id)
+
+                                                                                return (
+                                                                                    <div key={item.id} className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-3 md:grid-cols-[1fr_280px]">
+                                                                                        <div className="flex gap-3">
+                                                                                            <img
+                                                                                                src={item.image || 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80'}
+                                                                                                alt={item.nama_produk}
+                                                                                                className="h-16 w-16 rounded-2xl object-cover"
+                                                                                            />
+                                                                                            <div>
+                                                                                                <p className="font-black">{item.nama_produk}</p>
+                                                                                                <p className="text-xs text-gray-500">Ukuran {item.ukuran || '-'} x {item.qty}</p>
+                                                                                                <p className="mt-1 text-sm font-bold">{formatRupiah(item.total_harga)}</p>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {reviewed ? (
+                                                                                            <div className="rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
+                                                                                                Review sudah dikirim
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <div className="space-y-2">
+                                                                                                <select
+                                                                                                    value={form.rating}
+                                                                                                    onChange={(e) => setReviewForm(order.id, item.produk_id, { rating: e.target.value })}
+                                                                                                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-950"
+                                                                                                >
+                                                                                                    {[5, 4, 3, 2, 1].map((rating) => (
+                                                                                                        <option key={rating} value={rating}>{rating} bintang</option>
+                                                                                                    ))}
+                                                                                                </select>
+                                                                                                <textarea
+                                                                                                    value={form.komentar}
+                                                                                                    onChange={(e) => setReviewForm(order.id, item.produk_id, { komentar: e.target.value })}
+                                                                                                    className="min-h-20 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-950"
+                                                                                                    placeholder="Tulis pengalaman kamu tentang produk ini"
+                                                                                                ></textarea>
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => submitReview(order, item)}
+                                                                                                    className="w-full rounded-full bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                                                                                                >
+                                                                                                    Kirim Review
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
                                                     ))}
                                                 </tbody>
                                             </table>
@@ -487,7 +766,7 @@ function Input({ label, value, onChange, error, type = 'text' }) {
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-950"
+                className="mt-2 w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-950"
                 required={label !== 'Kode pos'}
             />
             {error && <p className="mt-1 text-xs font-semibold text-red-600">{error}</p>}

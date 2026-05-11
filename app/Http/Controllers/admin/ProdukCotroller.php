@@ -40,9 +40,8 @@ class ProdukCotroller extends Controller
             'harga' => 'required',
             'diskon' => 'required',
             'stok' => 'required',
-            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
+            'images' => 'required|array|min:1',
+            'images.*' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $pr = new Produk();
@@ -60,9 +59,7 @@ class ProdukCotroller extends Controller
         $pr->stok = $request->stok;
         $pr->save();
 
-        $images = $request->file('images', [$request->file('image')]);
-
-        foreach ($images as $image) {
+        foreach ($request->file('images') as $image) {
             $path = $image->store('produk', 'public');
 
             $img = new Gambarprodk();

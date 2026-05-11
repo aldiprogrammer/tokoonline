@@ -2,7 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react'
 import React, { useEffect, useMemo, useState } from 'react'
 import Swal from 'sweetalert2'
 
-export default function DetailProduk({ produk, produkTerkait }) {
+export default function DetailProduk({ produk, produkTerkait, reviews = [], reviewSummary = { count: 0, average: 0 } }) {
     const [isCartOpen, setIsCartOpen] = useState(false)
     const { auth, flash, cart: initialCart } = usePage().props
     const [cart, setCart] = useState(initialCart ?? [])
@@ -48,6 +48,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
 
     const cartCount = cart.reduce((total, item) => total + item.qty, 0)
     const cartTotal = cart.reduce((total, item) => total + item.harga * item.qty, 0)
+    const reviewAverage = Number(reviewSummary?.average || 0)
 
     const sendCartRequest = async (url, method, payload = null, successMessage = null) => {
         const response = await fetch(url, {
@@ -172,11 +173,11 @@ export default function DetailProduk({ produk, produkTerkait }) {
         <>
             <Head title={produk.nama_produk} />
 
-            <div className="min-h-screen bg-white text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+            <div className="min-h-screen bg-gray-50 text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
                         <Link href="/" className="flex items-center gap-2 text-lg font-bold">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gray-950 text-white">
+                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
                                 <i className="fas fa-shirt"></i>
                             </span>
                             FEBRINOX
@@ -185,7 +186,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-lg bg-gray-950 text-white hover:bg-gray-800"
+                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
                             >
                                 <i className="fas fa-bag-shopping"></i>
                                 <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
@@ -193,12 +194,14 @@ export default function DetailProduk({ produk, produkTerkait }) {
                                 </span>
                             </button>
                             {auth?.user ? (
-                                <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-2 py-2 sm:px-3">
-                                    {auth.user.avatar && <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full" />}
+                                <Link href='/profil'>
+                                    <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-2 shadow-sm sm:px-3">
+                                        {auth.user.avatar && <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full" />}
 
-                                </div>
+                                    </div>
+                                </Link>
                             ) : (
-                                <Link href="/loginuser" className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold hover:bg-gray-100">Login</Link>
+                                <Link href="/loginuser" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-gray-100">Login</Link>
                             )}
 
 
@@ -218,7 +221,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
 
                     <section className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
                         <div className="space-y-3">
-                            <div className="overflow-hidden rounded-lg bg-gray-100">
+                            <div className="overflow-hidden rounded-3xl bg-gray-100 shadow-xl shadow-gray-950/10">
                                 <img src={selectedImage} alt={produk.nama_produk} className="aspect-[4/5] w-full object-cover lg:aspect-[5/5]" />
                             </div>
                             <div className="grid grid-cols-5 gap-2">
@@ -227,7 +230,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                                         key={image}
                                         type="button"
                                         onClick={() => setSelectedImage(image)}
-                                        className={`overflow-hidden rounded-lg border ${selectedImage === image ? 'border-gray-950' : 'border-gray-200'}`}
+                                        className={`overflow-hidden rounded-2xl border bg-white p-1 transition ${selectedImage === image ? 'border-gray-950 shadow-lg shadow-gray-950/10' : 'border-gray-200 hover:border-gray-400'}`}
                                     >
                                         <img src={image} alt={produk.nama_produk} className="aspect-square w-full object-cover" />
                                     </button>
@@ -235,17 +238,22 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             </div>
                         </div>
 
-                        <div className="lg:sticky lg:top-24 lg:self-start">
+                        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xl shadow-gray-950/5 sm:p-6 lg:sticky lg:top-24 lg:self-start">
                             <p className="text-sm font-bold uppercase tracking-[0.16em] text-gray-500">{produk.kategoriproduk?.kategori || 'Fashion'}</p>
                             <h1 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">{produk.nama_produk}</h1>
                             <div className="mt-4 flex flex-wrap items-center gap-3">
                                 <p className="text-3xl font-black">{formatRupiah(produk.harga)}</p>
                                 {Number(produk.diskon) > 0 && (
-                                    <span className="rounded-md bg-red-600 px-2 py-1 text-sm font-bold text-white">-{produk.diskon}%</span>
+                                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-sm font-bold text-white">-{produk.diskon}%</span>
+                                )}
+                                {Number(reviewSummary?.count || 0) > 0 && (
+                                    <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700">
+                                        <i className="fas fa-star mr-1"></i>{reviewAverage} ({reviewSummary.count})
+                                    </span>
                                 )}
                             </div>
 
-                            <div className="mt-6 rounded-lg border border-gray-200 p-4">
+                            <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                                 <h2 className="font-black">Keterangan Produk</h2>
                                 <p className="mt-2 whitespace-pre-line text-sm leading-7 text-gray-600">
                                     {produk.keterangan || 'Produk fashion pilihan dengan bahan nyaman untuk aktivitas harian.'}
@@ -263,7 +271,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                                             key={ukuran}
                                             type="button"
                                             onClick={() => setSelectedSize(ukuran)}
-                                            className={`h-11 min-w-12 rounded-lg border px-4 text-sm font-black ${selectedSize === ukuran ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-800 hover:border-gray-950'}`}
+                                            className={`h-11 min-w-12 rounded-full border px-4 text-sm font-black transition ${selectedSize === ukuran ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-800 hover:border-gray-950'}`}
                                         >
                                             {ukuran}
                                         </button>
@@ -272,7 +280,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             </div>
 
                             <div className="mt-6 flex items-center gap-3">
-                                <div className="flex h-12 items-center rounded-lg border border-gray-200">
+                                <div className="flex h-12 items-center rounded-full border border-gray-200 bg-white">
                                     <button type="button" onClick={() => setQty(Math.max(qty - 1, 1))} className="grid h-12 w-12 place-items-center hover:bg-gray-100">
                                         <i className="fas fa-minus text-xs"></i>
                                     </button>
@@ -285,7 +293,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                                     type="button"
                                     onClick={addToCart}
                                     disabled={!selectedSize || Number(produk.stok) < 1}
-                                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-gray-950 px-5 text-sm font-black text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-gray-950 px-5 text-sm font-black text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     <i className="fas fa-cart-shopping"></i>
                                     Tambah ke Keranjang
@@ -293,15 +301,15 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             </div>
 
                             <div className="mt-6 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-                                <div className="rounded-lg bg-gray-50 p-4">
+                                <div className="rounded-2xl bg-gray-50 p-4">
                                     <i className="fas fa-truck-fast mb-2 text-gray-950"></i>
                                     <p className="font-bold">Pengiriman Cepat</p>
                                 </div>
-                                <div className="rounded-lg bg-gray-50 p-4">
+                                <div className="rounded-2xl bg-gray-50 p-4">
                                     <i className="fas fa-shield-halved mb-2 text-gray-950"></i>
                                     <p className="font-bold">Checkout Aman</p>
                                 </div>
-                                <div className="rounded-lg bg-gray-50 p-4">
+                                <div className="rounded-2xl bg-gray-50 p-4">
                                     <i className="fas fa-ruler-combined mb-2 text-gray-950"></i>
                                     <p className="font-bold">Ukuran Lengkap</p>
                                 </div>
@@ -314,7 +322,7 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             <h2 className="mb-5 text-2xl font-black">Produk Terkait</h2>
                             <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4">
                                 {produkTerkait.map((item) => (
-                                    <Link key={item.id} href={`/produk/${item.slug}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                                    <Link key={item.id} href={`/produk/${item.slug}`} className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-950/10">
                                         <img src={getProductImage(item)} alt={item.nama_produk} className="aspect-[4/5] w-full object-cover transition group-hover:scale-105" />
                                         <div className="p-3">
                                             <p className="truncate text-sm font-bold">{item.nama_produk}</p>
@@ -325,6 +333,49 @@ export default function DetailProduk({ produk, produkTerkait }) {
                             </div>
                         </section>
                     )}
+
+                    <section className="mt-14 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-gray-500">Review Produk</p>
+                                <h2 className="text-2xl font-black">Komentar pembeli</h2>
+                            </div>
+                            <div className="rounded-full bg-amber-50 px-4 py-2 text-sm font-black text-amber-700">
+                                <i className="fas fa-star mr-1"></i>
+                                {reviewAverage || '-'} dari {reviewSummary?.count || 0} review
+                            </div>
+                        </div>
+
+                        {reviews.length > 0 ? (
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {reviews.map((review) => (
+                                    <article key={review.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <span className="grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-sm font-black text-white">
+                                                    {review.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                </span>
+                                                <div>
+                                                    <p className="font-black">{review.user?.name || 'Customer'}</p>
+                                                    <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString('id-ID')}</p>
+                                                </div>
+                                            </div>
+                                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-amber-600">
+                                                <i className="fas fa-star mr-1"></i>{review.rating}
+                                            </span>
+                                        </div>
+                                        <p className="line-clamp-4 text-sm leading-6 text-gray-600">{review.komentar}</p>
+                                    </article>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-gray-300 px-5 py-10 text-center">
+                                <i className="fas fa-comment-dots mb-3 text-3xl text-gray-300"></i>
+                                <h3 className="font-black">Belum ada review</h3>
+                                <p className="mt-1 text-sm text-gray-500">Review dari pembeli akan tampil setelah produk diterima.</p>
+                            </div>
+                        )}
+                    </section>
                 </main>
 
                 {isCartOpen && (

@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\admin\DashboardController;
 use App\Http\Controllers\admin\KategoriController;
+use App\Http\Controllers\admin\OrderController;
 use App\Http\Controllers\admin\PenggunaController;
 use App\Http\Controllers\admin\ProdukCotroller;
 use App\Http\Controllers\admin\RoleController;
 use App\Http\Controllers\App\CartController;
 use App\Http\Controllers\App\CheckoutController;
 use App\Http\Controllers\App\CustomerController;
+use App\Http\Controllers\App\ProductReviewController;
 use App\Http\Controllers\app\KeranjangController;
 use App\Http\Controllers\app\ProfilController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -54,6 +56,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/destinations', [CheckoutController::class, 'searchDestination'])->name('checkout.destinations');
     Route::post('/checkout/shipping-cost', [CheckoutController::class, 'shippingCost'])->name('checkout.shipping-cost');
     Route::post('/orders/{order}/pay', [CheckoutController::class, 'pay'])->name('orders.pay');
+    Route::post('/product-reviews', [ProductReviewController::class, 'store'])->name('product-reviews.store');
     Route::put('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{id}', [CartController::class, 'delete'])->name('cart.delete');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
@@ -66,6 +69,8 @@ Route::post('/midtrans/notification', [CheckoutController::class, 'notification'
 
 Route::middleware('pengguna.session')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/order', [OrderController::class, 'index'])->name('admin.order');
+    Route::put('/admin/order/{order}/status-pengiriman', [OrderController::class, 'updateStatus'])->name('admin.order.status-pengiriman');
     Route::get('/admin/kategori', [KategoriController::class, 'index'])->name('admin.kategori');
     Route::post('/admin/kategori', [KategoriController::class, 'store'])->name('store.admin.kategori');
     Route::put('/admin/kategori/{id}', [KategoriController::class, 'update'])->name('update.admin.kategori');

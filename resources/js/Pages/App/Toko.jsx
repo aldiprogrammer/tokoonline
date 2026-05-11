@@ -204,11 +204,11 @@ export default function Toko({ produk, kategori }) {
         <>
             <Head title="Toko Online Fashion" />
 
-            <div className="min-h-screen bg-white text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+            <div className="min-h-screen bg-gray-50 text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
                         <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gray-950 text-white">
+                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
                                 <i className="fas fa-shirt"></i>
                             </span>
                             <span className="truncate">FEBRINOX</span>
@@ -222,17 +222,20 @@ export default function Toko({ produk, kategori }) {
 
                         <div className="flex items-center gap-2">
                             {auth?.user ? (
+
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 px-2 sm:px-3">
-                                        {auth.user.avatar ? (
-                                            <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
-                                        ) : (
-                                            <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-950 text-xs font-bold text-white">
-                                                {auth.user.name?.charAt(0)?.toUpperCase()}
-                                            </span>
-                                        )}
-                                        <span className="hidden max-w-28 truncate text-sm font-semibold sm:inline">{auth.user.name}</span>
-                                    </div>
+                                    <Link href='/profil'>
+                                            <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
+                                            {auth.user.avatar ? (
+                                                <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
+                                            ) : (
+                                                <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-950 text-xs font-bold text-white">
+                                                    {auth.user.name?.charAt(0)?.toUpperCase()}
+                                                </span>
+                                            )}
+                                            <span className="hidden max-w-28 truncate text-sm font-semibold sm:inline">{auth.user.name}</span>
+                                        </div>
+                                    </Link>
                                     <button
                                         type="button"
                                         onClick={logoutUser}
@@ -241,19 +244,20 @@ export default function Toko({ produk, kategori }) {
                                         <i className="fas fa-right-from-bracket"></i>
                                     </button>
                                 </div>
+
                             ) : (
-                                <Link href="/loginuser" className="grid h-10 w-10 place-items-center rounded-lg border border-gray-200 text-gray-950 hover:bg-gray-100 sm:w-auto sm:px-4">
+                                <Link href="/loginuser" className="grid h-10 w-10 place-items-center rounded-full border border-gray-200 bg-white text-gray-950 shadow-sm hover:bg-gray-100 sm:w-auto sm:px-4">
                                     <i className="fas fa-user sm:hidden"></i>
                                     <span className="hidden text-sm font-bold sm:inline">Login</span>
                                 </Link>
                             )}
-                            <button className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100 min-[380px]:grid">
+                            {/* <button className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100 min-[380px]:grid">
                                 <i className="fas fa-magnifying-glass"></i>
-                            </button>
+                            </button> */}
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-lg bg-gray-950 text-white hover:bg-gray-800"
+                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
                             >
                                 <i className="fas fa-bag-shopping"></i>
                                 <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
@@ -265,15 +269,15 @@ export default function Toko({ produk, kategori }) {
                 </header>
 
                 <main>
-                    <section className="relative overflow-hidden">
+                    <section className="relative overflow-hidden bg-gray-950">
                         <div className="absolute inset-0">
                             <img src='https://emediaidentity.com/wp-content/uploads/2025/04/1350-2023223-Desain-12-minCetak-min-1.png-1-scaled-1.webp' alt="Koleksi fashion terbaru" className="h-full w-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10"></div>
                         </div>
 
-                        <div className="relative mx-auto grid min-h-[520px] max-w-7xl content-end px-4 pb-8 pt-24 sm:px-6 md:min-h-[620px] lg:px-8">
+                        <div className="relative mx-auto grid min-h-[500px] max-w-7xl content-end px-4 pb-10 pt-24 sm:px-6 md:min-h-[620px] lg:px-8">
                             <div className="max-w-2xl text-white">
-                                <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-white/75">
+                                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/75 sm:text-sm">
                                     Koleksi Fashion Harian
                                 </p>
                                 <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
@@ -283,10 +287,10 @@ export default function Toko({ produk, kategori }) {
                                     Temukan baju pilihan dengan ukuran lengkap, harga bersahabat, dan tampilan yang siap dipakai sehari-hari.
                                 </p>
                                 <div className="mt-6 flex flex-wrap gap-3">
-                                    <a href="#produk" className="rounded-lg bg-white px-5 py-3 text-sm font-bold text-gray-950 hover:bg-gray-100">
+                                    <a href="#produk" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-gray-950 shadow-xl shadow-black/20 hover:bg-gray-100">
                                         Belanja Sekarang
                                     </a>
-                                    <a href="#kategori" className="rounded-lg border border-white/40 px-5 py-3 text-sm font-bold text-white hover:bg-white/10">
+                                    <a href="#kategori" className="rounded-full border border-white/40 px-5 py-3 text-sm font-bold text-white hover:bg-white/10">
                                         Lihat Kategori
                                     </a>
                                 </div>
@@ -294,18 +298,18 @@ export default function Toko({ produk, kategori }) {
                         </div>
                     </section>
 
-                    <section id="promo" className="border-b border-gray-200 bg-gray-950 text-white">
-                        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-5 text-sm sm:grid-cols-3 sm:px-6 lg:px-8">
-                            <div className="flex items-center gap-3">
-                                <i className="fas fa-truck-fast text-lg text-emerald-300"></i>
+                    <section id="promo" className="border-b border-gray-200 bg-white">
+                        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-5 text-sm sm:grid-cols-3 sm:px-6 lg:px-8">
+                            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                <i className="fas fa-truck-fast text-lg text-emerald-600"></i>
                                 <span>Pengiriman cepat untuk semua pesanan.</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <i className="fas fa-tags text-lg text-amber-300"></i>
+                            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                <i className="fas fa-tags text-lg text-amber-600"></i>
                                 <span>Promo diskon untuk produk pilihan.</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <i className="fas fa-ruler-combined text-lg text-sky-300"></i>
+                            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                <i className="fas fa-ruler-combined text-lg text-sky-600"></i>
                                 <span>Ukuran produk mudah dipilih.</span>
                             </div>
                         </div>
@@ -324,7 +328,7 @@ export default function Toko({ produk, kategori }) {
                             <button
                                 type="button"
                                 onClick={() => setSelectedCategory('semua')}
-                                className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-bold ${selectedCategory === 'semua' ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700'}`}
+                                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${selectedCategory === 'semua' ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
                             >
                                 Semua
                             </button>
@@ -333,7 +337,7 @@ export default function Toko({ produk, kategori }) {
                                     key={item.id}
                                     type="button"
                                     onClick={() => setSelectedCategory(item.id)}
-                                    className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-bold ${String(selectedCategory) === String(item.id) ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700'}`}
+                                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${String(selectedCategory) === String(item.id) ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
                                 >
                                     {item.kategori}
                                 </button>
@@ -352,7 +356,7 @@ export default function Toko({ produk, kategori }) {
                         {filteredProduk.length > 0 ? (
                             <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                                 {filteredProduk.map((item) => (
-                                    <article key={item.id} className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                                    <article key={item.id} className="group overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-950/10">
                                         <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
                                             <Link href={`/produk/${item.slug}`}>
                                                 <img
@@ -362,7 +366,7 @@ export default function Toko({ produk, kategori }) {
                                                 />
                                             </Link>
                                             {Number(item.diskon) > 0 && (
-                                                <span className="absolute left-2 top-2 rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                                                <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
                                                     -{item.diskon}%
                                                 </span>
                                             )}
@@ -370,7 +374,7 @@ export default function Toko({ produk, kategori }) {
                                                 type="button"
                                                 onClick={() => router.visit(`/produk/${item.slug}`)}
                                                 disabled={Number(item.stok) < 1}
-                                                className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-lg bg-white text-gray-950 shadow-md hover:bg-gray-950 hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                                                className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-full bg-white text-gray-950 shadow-lg shadow-black/10 transition hover:bg-gray-950 hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                                             >
                                                 <i className="fas fa-cart-shopping"></i>
                                             </button>
@@ -390,7 +394,7 @@ export default function Toko({ produk, kategori }) {
                                                     </p>
                                                     <p className="text-xs text-gray-500">Ukuran {item.ukuran?.replaceAll(',', ', ')}</p>
                                                 </div>
-                                                <span className={`rounded-md px-2 py-1 text-xs font-bold ${Number(item.stok) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                <span className={`rounded-full px-2 py-1 text-xs font-bold ${Number(item.stok) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                                     Stok {item.stok}
                                                 </span>
                                             </div>
@@ -399,7 +403,7 @@ export default function Toko({ produk, kategori }) {
                                 ))}
                             </div>
                         ) : (
-                            <div className="rounded-lg border border-dashed border-gray-300 px-5 py-12 text-center">
+                            <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-12 text-center">
                                 <i className="fas fa-shirt mb-3 text-3xl text-gray-400"></i>
                                 <h3 className="text-lg font-bold">Produk belum tersedia</h3>
                                 <p className="mt-1 text-sm text-gray-500">Silakan cek kategori lain atau tambah produk dari halaman admin.</p>
@@ -408,7 +412,7 @@ export default function Toko({ produk, kategori }) {
                     </section>
                 </main>
 
-                <footer className="border-t border-gray-200 bg-gray-50">
+                <footer className="border-t border-gray-200 bg-white">
                     <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                         <p className="font-semibold text-gray-950">MyStore Fashion</p>
                         <p>Belanja baju nyaman, cepat, dan responsive dari perangkat apa pun.</p>

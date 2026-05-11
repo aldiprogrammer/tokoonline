@@ -15,5 +15,7 @@ class Alamat extends Model
         'kelurahan',
         'alamat',
         'kode_pos',
+        'rajaongkir_destination_id',
+        'rajaongkir_destination_label',
     ];
 }
