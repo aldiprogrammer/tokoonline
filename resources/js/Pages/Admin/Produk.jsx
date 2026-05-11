@@ -15,12 +15,18 @@ export default function Produk({ produk, kategori }) {
         harga: '',
         diskon: '',
         stok: '',
-        images: [],
+        image_depan: null,
+        image_samping: null,
+        image_belakang: null,
     })
 
-    const handleEdit = (id) => {
-        const item = produk.find((produkItem) => produkItem.id == id);
+    const getImageByPosisi = (item, posisi) => {
+        const found = item.gambarproduk?.find((g) => g.posisi === posisi)
+        return found ? `/storage/${found.image}` : null
+    }
 
+    const handleEdit = (id) => {
+        const item = produk.find((produkItem) => produkItem.id == id)
         setData({
             _method: 'put',
             id: item.id,
@@ -31,39 +37,39 @@ export default function Produk({ produk, kategori }) {
             harga: item.harga,
             diskon: item.diskon,
             stok: item.stok,
-            images: [],
-        });
-
-        document.getElementById('modal_edit_produk').showModal();
+            image_depan: null,
+            image_samping: null,
+            image_belakang: null,
+        })
+        document.getElementById('modal_edit_produk').showModal()
     }
 
     const handleUkuranChange = (ukuran) => {
         if (data.ukuran.includes(ukuran)) {
-            setData('ukuran', data.ukuran.filter((item) => item !== ukuran));
-            return;
+            setData('ukuran', data.ukuran.filter((item) => item !== ukuran))
+            return
         }
+        setData('ukuran', [...data.ukuran, ukuran])
+    }
 
-        setData('ukuran', [...data.ukuran, ukuran]);
-    };
+    const handleImageChange = (field, e) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setData(field, file)
+        }
+    }
 
-    const handleImageChange = (e) => {
-        setData('images', Array.from(e.target.files));
-    };
-
-    const removeSelectedImage = (index) => {
-        const newImages = [...data.images];
-        newImages.splice(index, 1);
-        setData('images', newImages);
-    };
+    const removeImage = (field) => {
+        setData(field, null)
+    }
 
     const edit = (e) => {
-        e.preventDefault();
-
+        e.preventDefault()
         post('/admin/produk/' + data.id, {
             forceFormData: true,
             onSuccess: () => {
-                reset();
-                document.getElementById('modal_edit_produk').close();
+                reset()
+                document.getElementById('modal_edit_produk').close()
             },
         })
     }
@@ -85,58 +91,73 @@ export default function Produk({ produk, kategori }) {
             reverseButtons: true,
         }).then((result) => {
             if (result.isConfirmed) {
-                destroy('/admin/produk/' + id);
+                destroy('/admin/produk/' + id)
             }
-        });
+        })
     }
 
-    const selectedProduct = produk.find((item) => item.id == data.id);
+    const selectedProduct = produk.find((item) => item.id == data.id)
+
+    const ImageUpload = ({ field, label, posisi }) => {
+        const file = data[field]
+        const currentSrc = selectedProduct ? getImageByPosisi(selectedProduct, posisi) : null
+
+        return (
+            <div>
+                <p className="text-sm font-semibold mb-1">{label}</p>
+                {currentSrc && !file && (
+                    <img src={currentSrc} alt={label} className="h-24 w-full rounded-xl border border-base-300 object-cover shadow-sm mb-2" />
+                )}
+                {file ? (
+                    <div className="group relative h-28 w-full overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
+                        <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
+                        <button
+                            type="button"
+                            onClick={() => removeImage(field)}
+                            className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-red-600 text-xs text-white opacity-0 shadow transition-opacity group-hover:opacity-100"
+                        >
+                            <i className="fas fa-times"></i>
+                        </button>
+                        <p className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-xs text-white truncate">{file.name}</p>
+                    </div>
+                ) : (
+                    <label className="flex min-h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-base-300 bg-base-100/50 px-4 text-center text-sm text-base-content/60 hover:border-primary hover:bg-primary/5">
+                        <i className="fas fa-cloud-upload-alt text-lg text-base-content/40"></i>
+                        <span className="font-semibold text-xs">
+                            {currentSrc ? 'Klik ganti gambar' : 'Klik pilih gambar'}
+                        </span>
+                        <input type="file" accept="image/jpeg,image/png,image/jpg" onChange={(e) => handleImageChange(field, e)} className="hidden" />
+                    </label>
+                )}
+            </div>
+        )
+    }
 
     return (
         <>
             <AdminLayout>
-                <div className="bg-base-100/70 backdrop-blur rounded-2xl shadow-lg p-6" >
+                <div className="bg-base-100/70 backdrop-blur rounded-2xl shadow-lg p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Data Produk</h2>
                         <Link href={'/admin/tambahproduk'} className="btn btn-primary">+ Tambah data</Link>
-
                     </div>
 
                     <dialog id="modal_edit_produk" className="modal">
                         <div className="modal-box max-w-4xl">
-                            <h3 className="font-bold text-lg mb-4">
-                                Edit Produk
-                            </h3>
+                            <h3 className="font-bold text-lg mb-4">Edit Produk</h3>
                             <button
                                 type="button"
                                 className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
                                 onClick={() => document.getElementById('modal_edit_produk').close()}
-                            >
-                                X
-                            </button>
+                            >X</button>
 
                             <form onSubmit={edit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Nama produk"
-                                        className="input input-bordered w-full"
-                                        value={data.nama}
-                                        onChange={(e) => setData('nama', e.target.value)}
-                                        required
-                                    />
-
-                                    <select
-                                        className="input input-bordered w-full"
-                                        value={data.kategori_id}
-                                        onChange={(e) => setData('kategori_id', e.target.value)}
-                                        required
-                                    >
+                                    <input type="text" placeholder="Nama produk" className="input input-bordered w-full" value={data.nama} onChange={(e) => setData('nama', e.target.value)} required />
+                                    <select className="input input-bordered w-full" value={data.kategori_id} onChange={(e) => setData('kategori_id', e.target.value)} required>
                                         <option value="">Pilih kategori</option>
                                         {kategori.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.kategori}
-                                            </option>
+                                            <option key={item.id} value={item.id}>{item.kategori}</option>
                                         ))}
                                     </select>
 
@@ -145,114 +166,31 @@ export default function Produk({ produk, kategori }) {
                                         <div className="flex flex-wrap gap-2">
                                             {ukuranOptions.map((ukuran) => (
                                                 <label key={ukuran} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${data.ukuran.includes(ukuran) ? 'border-primary bg-primary text-white' : 'border-base-300 bg-base-100'}`}>
-                                                    <input
-                                                        type="checkbox"
-                                                        className="hidden"
-                                                        checked={data.ukuran.includes(ukuran)}
-                                                        onChange={() => handleUkuranChange(ukuran)}
-                                                    />
+                                                    <input type="checkbox" className="hidden" checked={data.ukuran.includes(ukuran)} onChange={() => handleUkuranChange(ukuran)} />
                                                     {ukuran}
                                                 </label>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <input
-                                        type="number"
-                                        placeholder="Harga Produk"
-                                        className="input input-bordered w-full"
-                                        value={data.harga}
-                                        onChange={(e) => setData('harga', e.target.value)}
-                                        required
-                                    />
-
-                                    <input
-                                        type="number"
-                                        placeholder="Diskon"
-                                        className="input input-bordered w-full"
-                                        value={data.diskon}
-                                        onChange={(e) => setData('diskon', e.target.value)}
-                                        required
-                                    />
-
-                                    <input
-                                        type="number"
-                                        placeholder="Stok"
-                                        className="input input-bordered w-full"
-                                        value={data.stok}
-                                        onChange={(e) => setData('stok', e.target.value)}
-                                        required
-                                    />
-
-                                    <textarea
-                                        placeholder="Keterangan produk"
-                                        className="textarea textarea-bordered col-span-2 min-h-32"
-                                        value={data.keterangan}
-                                        onChange={(e) => setData('keterangan', e.target.value)}
-                                        required
-                                    ></textarea>
+                                    <input type="number" placeholder="Harga Produk" className="input input-bordered w-full" value={data.harga} onChange={(e) => setData('harga', e.target.value)} required />
+                                    <input type="number" placeholder="Diskon" className="input input-bordered w-full" value={data.diskon} onChange={(e) => setData('diskon', e.target.value)} required />
+                                    <input type="number" placeholder="Stok" className="input input-bordered w-full" value={data.stok} onChange={(e) => setData('stok', e.target.value)} required />
+                                    <textarea placeholder="Keterangan produk" className="textarea textarea-bordered col-span-2 min-h-32" value={data.keterangan} onChange={(e) => setData('keterangan', e.target.value)} required></textarea>
                                 </div>
 
                                 <div>
-                                    <p className="font-semibold mb-2">Gambar Saat Ini</p>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {selectedProduct?.gambarproduk?.length > 0 ? (
-                                            selectedProduct.gambarproduk.map((gambar) => (
-                                                <img
-                                                    key={gambar.id}
-                                                    src={`/storage/${gambar.image}`}
-                                                    alt={selectedProduct.nama_produk}
-                                                    className="w-20 h-20 object-cover rounded-lg border"
-                                                />
-                                            ))
-                                        ) : (
-                                            <span className="text-sm text-gray-400">Tidak ada gambar</span>
-                                        )}
+                                    <p className="font-semibold mb-2">Gambar Produk</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <ImageUpload field="image_depan" label="Depan" posisi="depan" />
+                                        <ImageUpload field="image_samping" label="Samping" posisi="samping" />
+                                        <ImageUpload field="image_belakang" label="Belakang" posisi="belakang" />
                                     </div>
-
-                                    <input
-                                        type="file"
-                                        multiple
-                                        accept="image/jpeg,image/png,image/jpg"
-                                        className="file-input file-input-bordered w-full"
-                                        onChange={handleImageChange}
-                                    />
-                                    {data.images.length > 0 && (
-                                        <div className="mt-3">
-                                            <p className="mb-2 text-sm font-semibold">Gambar Baru</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {data.images.map((file, index) => (
-                                                    <div key={`${file.name}-${index}`} className="relative">
-                                                        <img
-                                                            src={URL.createObjectURL(file)}
-                                                            alt=""
-                                                            className="w-20 h-20 object-cover rounded-lg border"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeSelectedImage(index)}
-                                                            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded"
-                                                        >
-                                                            X
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
                                 <div className="modal-action">
-                                    <button type="submit" className="btn btn-primary" disabled={processing}>
-                                        Edit
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn"
-                                        onClick={() => document.getElementById('modal_edit_produk').close()}
-                                    >
-                                        Batal
-                                    </button>
+                                    <button type="submit" className="btn btn-primary" disabled={processing}>Edit</button>
+                                    <button type="button" className="btn" onClick={() => document.getElementById('modal_edit_produk').close()}>Batal</button>
                                 </div>
                             </form>
                         </div>
@@ -275,64 +213,46 @@ export default function Produk({ produk, kategori }) {
                                     <th>Opsi</th>
                                 </tr>
                             </thead>
-
                             <tbody>
-                                {produk.map((item, index) => (
-                                    <tr key={item.id} className="hover">
-                                        <td className="font-medium">{index + 1}</td>
-                                        <td>{item.kode_produk}</td>
-                                        <td>{item.nama_produk}</td>
-                                        <td>{item.kategoriproduk.kategori}</td>
-                                        <td>
-                                            <div className="flex flex-wrap gap-1">
-                                                {item.ukuran?.split(',').map((ukuran) => (
-                                                    <span key={ukuran} className="badge badge-outline">{ukuran}</span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="max-w-48 truncate">{item.keterangan}</td>
-                                        <td>{item.harga}</td>
-                                        <td>{item.diskon}</td>
-                                        <td>{item.stok}</td>
-                                        <td>
-                                            <div className="flex flex-wrap gap-2">
-                                                {item.gambarproduk?.length > 0 ? (
-                                                    item.gambarproduk.map((gambar) => (
-                                                        <img
-                                                            key={gambar.id}
-                                                            src={`/storage/${gambar.image}`}
-                                                            alt={item.nama_produk}
-                                                            className="w-16 h-16 object-cover rounded-lg border"
-                                                        />
-                                                    ))
-                                                ) : (
-                                                    <span className="text-sm text-gray-400">Tidak ada gambar</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    className="btn btn-error btn-sm"
-                                                    onClick={() =>
-                                                        hapus(item.id)
-                                                    }
-                                                >
-                                                    Hapus
-                                                </button>
-                                                <button
-                                                    className="btn btn-success btn-sm"
-                                                    onClick={() => handleEdit(item.id)
-                                                    }
-                                                >
-                                                    Edit
-                                                </button>
-                                            </div>
-                                        </td>
-
-                                    </tr>
-                                ))}
-
+                                {produk.map((item, index) => {
+                                    const depan = getImageByPosisi(item, 'depan')
+                                    return (
+                                        <tr key={item.id} className="hover">
+                                            <td className="font-medium">{index + 1}</td>
+                                            <td>{item.kode_produk}</td>
+                                            <td>{item.nama_produk}</td>
+                                            <td>{item.kategoriproduk.kategori}</td>
+                                            <td>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {item.ukuran?.split(',').map((ukuran) => (
+                                                        <span key={ukuran} className="badge badge-outline">{ukuran}</span>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="max-w-48 truncate">{item.keterangan}</td>
+                                            <td>{item.harga}</td>
+                                            <td>{item.diskon}</td>
+                                            <td>{item.stok}</td>
+                                            <td>
+                                                <div className="flex -space-x-2">
+                                                    {['depan', 'samping', 'belakang'].map((pos) => {
+                                                        const src = getImageByPosisi(item, pos)
+                                                        return src ? (
+                                                            <img key={pos} src={src} alt={pos} className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm" title={pos} />
+                                                        ) : null
+                                                    })}
+                                                    {!depan && <span className="text-sm text-gray-400">Tidak ada</span>}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="flex gap-2">
+                                                    <button className="btn btn-error btn-sm" onClick={() => hapus(item.id)}>Hapus</button>
+                                                    <button className="btn btn-success btn-sm" onClick={() => handleEdit(item.id)}>Edit</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>

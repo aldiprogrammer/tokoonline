@@ -15,6 +15,9 @@ class OrderItem extends Model
         'qty',
         'total_harga',
         'image',
+        'sablon_position',
+        'sablon_price',
+        'sablon_image',
     ];
 
     public function order()

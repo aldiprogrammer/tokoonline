@@ -28,9 +28,7 @@ class ProdukCotroller extends Controller
     }
 
     function store(Request $request)
-
     {
-
         $request->validate([
             'nama' => 'required',
             'kategori_id' => 'required',
@@ -40,8 +38,9 @@ class ProdukCotroller extends Controller
             'harga' => 'required',
             'diskon' => 'required',
             'stok' => 'required',
-            'images' => 'required|array|min:1',
-            'images.*' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'image_depan' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'image_samping' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'image_belakang' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $pr = new Produk();
@@ -55,19 +54,26 @@ class ProdukCotroller extends Controller
         $pr->diskon = $request->diskon;
         $pr->harga_diskon = 000;
         $pr->slug = $slug;
-
         $pr->stok = $request->stok;
         $pr->save();
 
-        foreach ($request->file('images') as $image) {
-            $path = $image->store('produk', 'public');
+        $positions = [
+            'image_depan' => 'depan',
+            'image_samping' => 'samping',
+            'image_belakang' => 'belakang',
+        ];
 
-            $img = new Gambarprodk();
-            $img->id_produk = $pr->id;
-            $img->image = $path;
-            $img->save();
+        foreach ($positions as $field => $posisi) {
+            if ($request->hasFile($field)) {
+                $path = $request->file($field)->store('produk', 'public');
+
+                $img = new Gambarprodk();
+                $img->id_produk = $pr->id;
+                $img->image = $path;
+                $img->posisi = $posisi;
+                $img->save();
+            }
         }
-
 
         return redirect()->route('admin.produk')->with('success', 'Data berhasil ditambah');
     }
@@ -83,8 +89,9 @@ class ProdukCotroller extends Controller
             'harga' => 'required',
             'diskon' => 'required',
             'stok' => 'required',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
+            'image_depan' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'image_samping' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'image_belakang' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $pr = Produk::findOrFail($id);
@@ -98,20 +105,26 @@ class ProdukCotroller extends Controller
         $pr->stok = $request->stok;
         $pr->save();
 
-        if ($request->hasFile('images')) {
-            $gambarproduk = Gambarprodk::where('id_produk', $pr->id)->get();
+        $positions = [
+            'image_depan' => 'depan',
+            'image_samping' => 'samping',
+            'image_belakang' => 'belakang',
+        ];
 
-            foreach ($gambarproduk as $gambar) {
-                Storage::disk('public')->delete($gambar->image);
-                $gambar->delete();
-            }
+        foreach ($positions as $field => $posisi) {
+            if ($request->hasFile($field)) {
+                $existing = Gambarprodk::where('id_produk', $pr->id)->where('posisi', $posisi)->first();
+                if ($existing) {
+                    Storage::disk('public')->delete($existing->image);
+                    $existing->delete();
+                }
 
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('produk', 'public');
+                $path = $request->file($field)->store('produk', 'public');
 
                 $img = new Gambarprodk();
                 $img->id_produk = $pr->id;
                 $img->image = $path;
+                $img->posisi = $posisi;
                 $img->save();
             }
         }

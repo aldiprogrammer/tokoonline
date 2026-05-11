@@ -283,6 +283,45 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
         return order.reviews?.some((review) => Number(review.produk_id) === Number(produkId))
     }
 
+    const trackOrder = async (order) => {
+        try {
+            const response = await fetch(`/orders/${order.id}/track`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                credentials: 'same-origin',
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                throw new Error(result.message || 'Gagal melacak')
+            }
+
+            const data = result.data
+            const history = data?.history || []
+            const summary = data?.summary || {}
+
+            const historyHtml = history.length > 0
+                ? history.map((h) => `
+                    <div class="flex gap-3 text-left text-sm border-b border-gray-100 py-2">
+                        <span class="shrink-0 font-semibold text-gray-950">${h.date || ''}</span>
+                        <span class="text-gray-600">${h.desc || ''}</span>
+                    </div>
+                `).join('')
+                : '<p class="text-sm text-gray-500">Belum ada riwayat tracking.</p>'
+
+            Swal.fire({
+                title: `Tracking ${order.kurir.toUpperCase()} - ${order.no_resi}`,
+                html: `<div class="max-h-72 overflow-y-auto">${historyHtml}</div>`,
+                icon: 'info',
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#1f2937',
+            })
+        } catch (error) {
+            Swal.fire('Gagal', error.message, 'error')
+        }
+    }
+
     const submitReview = (order, item) => {
         const form = getReviewForm(order.id, item.produk_id)
 
@@ -562,118 +601,195 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                             )}
 
                             {activeMenu === 'pembelian' && (
-                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-                                    <div className="mb-5">
-                                        <h2 className="text-xl font-black">Data pembelian customer</h2>
-                                        <p className="mt-1 text-sm text-gray-500">Riwayat order yang pernah dibuat oleh akun ini.</p>
+                                <div className="space-y-4">
+                                    <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                                        <h2 className="text-xl font-black">Data Pembelian</h2>
+                                        <p className="mt-1 text-sm text-gray-500">Riwayat belanja kamu.</p>
                                     </div>
 
                                     {orders.length > 0 ? (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[680px] text-left text-sm">
-                                                <thead>
-                                                    <tr className="border-b border-gray-200 text-xs uppercase text-gray-500">
-                                                        <th className="py-3 pr-4">Kode Order</th>
-                                                        <th className="py-3 pr-4">Tanggal</th>
-                                                        <th className="py-3 pr-4">Total</th>
-                                                        <th className="py-3 pr-4">Status</th>
-                                                        <th className="py-3 pr-4">Aksi</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {orders.map((order) => (
-                                                        <React.Fragment key={order.id}>
-                                                            <tr className="border-b border-gray-100">
-                                                                <td className="py-4 pr-4 font-black">{order.kode_order}</td>
-                                                                <td className="py-4 pr-4 text-gray-600">{order.tanggal || '-'}</td>
-                                                                <td className="py-4 pr-4 font-black">{formatRupiah(order.total_harga)}</td>
-                                                                <td className="py-4 pr-4">
-                                                                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentBadgeClass(order)}`}>
-                                                                        {orderStatusText(order)}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="py-4 pr-4">
-                                                                    {Number(order.status_pembayaran || 0) === 0 ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => payOrder(order.id)}
-                                                                            disabled={payingOrderId === order.id}
-                                                                            className="rounded-full bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
-                                                                        >
-                                                                            {payingOrderId === order.id ? 'Membuka...' : 'Bayar Sekarang'}
-                                                                        </button>
-                                                                    ) : (
-                                                                        <span className="text-xs font-semibold text-gray-400">Lunas</span>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                            {Number(order.status_pengiriman || 0) === 3 && order.items?.length > 0 && (
-                                                                <tr className="border-b border-gray-100 bg-gray-50/70">
-                                                                    <td colSpan="5" className="py-4">
-                                                                        <div className="grid gap-3">
-                                                                            {order.items.map((item) => {
-                                                                                const reviewed = hasReview(order, item.produk_id)
-                                                                                const form = getReviewForm(order.id, item.produk_id)
+                                        orders.map((order) => (
+                                            <div key={order.id} className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                                                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                                                    <div>
+                                                        <p className="text-xs text-gray-400">Kode Order</p>
+                                                        <p className="font-black tracking-wide">{order.kode_order}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs text-gray-400">{order.tanggal || '-'}</p>
+                                                        <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${paymentBadgeClass(order)}`}>
+                                                            <i className={`fas ${Number(order.status_pembayaran || 0) === 0 ? 'fa-clock' : 'fa-circle-check'}`}></i>
+                                                            {orderStatusText(order)}
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                                                                                return (
-                                                                                    <div key={item.id} className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-3 md:grid-cols-[1fr_280px]">
-                                                                                        <div className="flex gap-3">
-                                                                                            <img
-                                                                                                src={item.image || 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80'}
-                                                                                                alt={item.nama_produk}
-                                                                                                className="h-16 w-16 rounded-2xl object-cover"
-                                                                                            />
-                                                                                            <div>
-                                                                                                <p className="font-black">{item.nama_produk}</p>
-                                                                                                <p className="text-xs text-gray-500">Ukuran {item.ukuran || '-'} x {item.qty}</p>
-                                                                                                <p className="mt-1 text-sm font-bold">{formatRupiah(item.total_harga)}</p>
-                                                                                            </div>
-                                                                                        </div>
-
-                                                                                        {reviewed ? (
-                                                                                            <div className="rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
-                                                                                                Review sudah dikirim
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            <div className="space-y-2">
-                                                                                                <select
-                                                                                                    value={form.rating}
-                                                                                                    onChange={(e) => setReviewForm(order.id, item.produk_id, { rating: e.target.value })}
-                                                                                                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-950"
-                                                                                                >
-                                                                                                    {[5, 4, 3, 2, 1].map((rating) => (
-                                                                                                        <option key={rating} value={rating}>{rating} bintang</option>
-                                                                                                    ))}
-                                                                                                </select>
-                                                                                                <textarea
-                                                                                                    value={form.komentar}
-                                                                                                    onChange={(e) => setReviewForm(order.id, item.produk_id, { komentar: e.target.value })}
-                                                                                                    className="min-h-20 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-950"
-                                                                                                    placeholder="Tulis pengalaman kamu tentang produk ini"
-                                                                                                ></textarea>
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onClick={() => submitReview(order, item)}
-                                                                                                    className="w-full rounded-full bg-gray-950 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800"
-                                                                                                >
-                                                                                                    Kirim Review
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )
-                                                                            })}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            )}
-                                                        </React.Fragment>
+                                                <div className="divide-y divide-gray-100 px-5">
+                                                    {order.items?.map((item) => (
+                                                        <div key={item.id} className="flex items-start gap-4 py-4">
+                                                            <img
+                                                                src={item.image || 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80'}
+                                                                alt={item.nama_produk}
+                                                                className="h-20 w-20 flex-shrink-0 rounded-2xl border border-gray-200 object-cover"
+                                                            />
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="font-black leading-tight">{item.nama_produk}</p>
+                                                                <p className="mt-1 text-xs text-gray-500">
+                                                                    Ukuran: <span className="font-semibold">{item.ukuran || '-'}</span>
+                                                                    {item.qty > 1 && <> &middot; {item.qty} barang</>}
+                                                                </p>
+                                                                <p className="mt-2 text-sm font-black">{formatRupiah(item.harga)}</p>
+                                                            </div>
+                                                            <div className="flex-shrink-0 text-right">
+                                                                <p className="text-xs text-gray-400">Subtotal</p>
+                                                                <p className="font-black">{formatRupiah(item.total_harga)}</p>
+                                                            </div>
+                                                        </div>
                                                     ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                </div>
+
+                                                <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-4">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="space-y-1.5">
+                                                            <div className="flex items-center gap-2 text-sm">
+                                                                <span className="text-gray-400">Subtotal</span>
+                                                                <span className="font-semibold">{formatRupiah(order.subtotal || order.total_harga - (order.ongkir || 0))}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-sm">
+                                                                <span className="text-gray-400">Ongkos Kirim</span>
+                                                                {order.ongkir ? (
+                                                                    <span className="font-semibold">{formatRupiah(order.ongkir)}</span>
+                                                                ) : (
+                                                                    <span className="text-gray-300">-</span>
+                                                                )}
+                                                            </div>
+                                                            {order.kurir && (
+                                                                <p className="text-xs text-gray-400">
+                                                                    <i className="fas fa-truck mr-1"></i>
+                                                                    {order.kurir.toUpperCase()} {order.layanan_kurir || ''}
+                                                                    {order.estimasi && <> &middot; {order.estimasi}</>}
+                                                                </p>
+                                                            )}
+                                                            {order.no_resi && (
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <span className="text-xs font-semibold text-gray-950 bg-gray-100 rounded-lg px-2.5 py-1">
+                                                                        Resi: {order.no_resi}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => trackOrder(order)}
+                                                                        className="text-xs font-bold text-gray-950 underline hover:no-underline"
+                                                                    >
+                                                                        <i className="fas fa-search mr-0.5"></i>
+                                                                        Lacak
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            <div className="pt-1.5">
+                                                                <span className="text-xs text-gray-400">Total Belanja</span>
+                                                                <p className="text-xl font-black">{formatRupiah(order.total_harga)}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            {Number(order.status_pembayaran || 0) === 0 ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => payOrder(order.id)}
+                                                                    disabled={payingOrderId === order.id}
+                                                                    className="flex items-center gap-2 rounded-full bg-gray-950 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                                                >
+                                                                    {payingOrderId === order.id ? (
+                                                                        'Membuka...'
+                                                                    ) : (
+                                                                        <>
+                                                                            <i className="fas fa-credit-card"></i>
+                                                                            Bayar Sekarang
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            ) : (
+                                                                <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-5 py-2.5 text-sm font-bold text-emerald-700">
+                                                                    <i className="fas fa-check-circle"></i>
+                                                                    Lunas
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {Number(order.status_pengiriman || 0) === 3 && order.items?.length > 0 && (
+                                                    <div className="border-t border-dashed border-gray-200 bg-gray-50/70 px-5 py-4">
+                                                        <p className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-700">
+                                                            <i className="fas fa-star"></i>
+                                                            Beri Review
+                                                        </p>
+                                                        <div className="grid gap-4">
+                                                            {order.items.map((item) => {
+                                                                const reviewed = hasReview(order, item.produk_id)
+                                                                const form = getReviewForm(order.id, item.produk_id)
+
+                                                                return (
+                                                                    <div key={item.id} className="rounded-2xl border border-gray-200 bg-white p-4">
+                                                                        {reviewed ? (
+                                                                            <div className="flex items-center gap-3">
+                                                                                <img src={item.image || ''} alt="" className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                                                                                <div>
+                                                                                    <p className="text-sm font-bold">{item.nama_produk}</p>
+                                                                                    <p className="mt-1 text-xs font-semibold text-emerald-600">
+                                                                                        <i className="fas fa-check-circle mr-1"></i>
+                                                                                        Review sudah dikirim
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+                                                                                <div className="flex items-start gap-3">
+                                                                                    <img src={item.image || ''} alt="" className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                                                                                    <div className="min-w-0">
+                                                                                        <p className="text-sm font-bold">{item.nama_produk}</p>
+                                                                                        <div className="mt-2 flex gap-1">
+                                                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                                                <button
+                                                                                                    key={star}
+                                                                                                    type="button"
+                                                                                                    onClick={() => setReviewForm(order.id, item.produk_id, { rating: star })}
+                                                                                                    className={`text-lg ${Number(form.rating) >= star ? 'text-amber-400' : 'text-gray-200'}`}
+                                                                                                >
+                                                                                                    <i className="fas fa-star"></i>
+                                                                                                </button>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <textarea
+                                                                                        value={form.komentar}
+                                                                                        onChange={(e) => setReviewForm(order.id, item.produk_id, { komentar: e.target.value })}
+                                                                                        className="min-h-20 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-950"
+                                                                                        placeholder="Tulis pengalaman kamu..."
+                                                                                    ></textarea>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => submitReview(order, item)}
+                                                                                        className="mt-2 w-full rounded-full bg-gray-950 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                                                                                    >
+                                                                                        Kirim Review
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
                                     ) : (
-                                        <EmptyState icon="fa-receipt" title="Belum ada data pembelian" description="Order yang berhasil dibuat akan tersimpan sebagai riwayat pembelian." />
+                                        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                                            <EmptyState icon="fa-receipt" title="Belum ada data pembelian" description="Order yang berhasil dibuat akan tersimpan sebagai riwayat pembelian." />
+                                        </div>
                                     )}
                                 </div>
                             )}

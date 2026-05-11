@@ -26,6 +26,7 @@ class Order extends Model
         'status_pembayaran',
         'status_midtrans',
         'status_pengiriman',
+        'no_resi',
         'tanggal',
     ];
 

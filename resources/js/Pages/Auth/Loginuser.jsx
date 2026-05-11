@@ -1,9 +1,14 @@
-import { Head, Link, usePage } from '@inertiajs/react'
+import { Head, Link, usePage, useForm } from '@inertiajs/react'
 import React, { useEffect } from 'react'
 import Swal from 'sweetalert2'
 
 export default function Loginuser() {
     const { flash } = usePage().props
+    const { data, setData, post, processing, errors, reset } = useForm({
+        email: '',
+        password: '',
+        remember: false,
+    })
 
     useEffect(() => {
         if (flash?.success || flash?.error) {
@@ -18,6 +23,13 @@ export default function Loginuser() {
             });
         }
     }, [flash?.success, flash?.error])
+
+    const submit = (e) => {
+        e.preventDefault()
+        post(route('loginuser.store'), {
+            onFinish: () => reset('password'),
+        })
+    }
 
     return (
         <>
@@ -49,6 +61,75 @@ export default function Loginuser() {
                             </p>
                         </div>
 
+                        <form onSubmit={submit} className="space-y-4">
+                            <div>
+                                <label className="mb-1 block text-sm font-semibold text-gray-700">Email</label>
+                                <input
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) => setData('email', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-gray-950 focus:outline-none focus:ring-1 focus:ring-gray-950"
+                                    placeholder="Masukkan email"
+                                    required
+                                />
+                                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-semibold text-gray-700">Password</label>
+                                <input
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-gray-950 focus:outline-none focus:ring-1 focus:ring-gray-950"
+                                    placeholder="Masukkan password"
+                                    required
+                                />
+                                {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 text-sm text-gray-600">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.remember}
+                                        onChange={(e) => setData('remember', e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                                    />
+                                    Ingat saya
+                                </label>
+                                <Link
+                                    href={route('password.request')}
+                                    className="text-sm text-gray-600 underline hover:text-gray-900"
+                                >
+                                    Lupa password?
+                                </Link>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:opacity-50"
+                            >
+                                {processing ? 'Memproses...' : 'Masuk'}
+                            </button>
+                        </form>
+
+                        <div className="my-6 text-center">
+                            <p className="text-sm text-gray-600">
+                                Belum punya akun?{' '}
+                                <Link href={route('register')} className="font-bold text-gray-950 underline hover:text-gray-800">
+                                    Daftar di sini
+                                </Link>
+                            </p>
+                        </div>
+
+                        <div className="my-6 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-gray-200"></div>
+                            <span className="text-xs font-semibold text-gray-400">ATAU</span>
+                            <div className="h-px flex-1 bg-gray-200"></div>
+                        </div>
+
                         <a
                             href="/auth/google"
                             className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-800 shadow-sm hover:bg-gray-50"
@@ -56,21 +137,6 @@ export default function Loginuser() {
                             <i className="fa-brands fa-google text-lg text-red-500"></i>
                             Continue with Google
                         </a>
-
-                        <div className="my-6 flex items-center gap-3">
-                            <div className="h-px flex-1 bg-gray-200"></div>
-                            <span className="text-xs font-semibold text-gray-400">AMAN DAN CEPAT</span>
-                            <div className="h-px flex-1 bg-gray-200"></div>
-                        </div>
-
-                        <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                            <div className="flex gap-3">
-                                <i className="fas fa-lock mt-1 text-gray-950"></i>
-                                <p>
-                                    Data akun Google digunakan hanya untuk login customer di toko ini.
-                                </p>
-                            </div>
-                        </div>
 
                         <Link href="/" className="mt-6 inline-flex text-sm font-bold text-gray-950 hover:underline">
                             Kembali ke toko

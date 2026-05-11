@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 
-export default function Checkout({ cartItems = [], profil, alamat, checkoutConfig }) {
+export default function Checkout({ cartItems = [], profil, alamat, checkoutConfig, sablonPrices = [] }) {
     const savedDestination = alamat?.rajaongkir_destination_id
         ? {
             id: Number(alamat.rajaongkir_destination_id),
@@ -25,8 +25,17 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
     const [loadingDestination, setLoadingDestination] = useState(false)
     const [loadingCost, setLoadingCost] = useState(false)
     const [processing, setProcessing] = useState(false)
+    const [sablonData, setSablonData] = useState({})
+    const [sablonUploading, setSablonUploading] = useState({})
+    const [expandedSablon, setExpandedSablon] = useState({})
+    const [sablonOffsets, setSablonOffsets] = useState({})
+    const [dragging, setDragging] = useState(null)
 
-    const subtotal = useMemo(() => cartItems.reduce((total, item) => total + item.harga * item.qty, 0), [cartItems])
+    const subtotal = useMemo(() => {
+        const productTotal = cartItems.reduce((total, item) => total + item.harga * item.qty, 0)
+        const sablonTotal = Object.values(sablonData).reduce((total, s) => total + (s.price || 0), 0)
+        return productTotal + sablonTotal
+    }, [cartItems, sablonData])
     const totalQty = useMemo(() => cartItems.reduce((total, item) => total + item.qty, 0), [cartItems])
     const totalWeight = Math.max(totalQty * Number(checkoutConfig?.defaultWeight || 500), 1)
     const shippingCost = selectedShipping ? Number(selectedShipping.cost || 0) : 0
@@ -43,10 +52,12 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
     }
 
     const requestJson = async (url, options = {}) => {
+        const isFormData = options.body instanceof FormData
+
         const response = await fetch(url, {
             ...options,
             headers: {
-                'Content-Type': 'application/json',
+                ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 ...(options.headers || {}),
@@ -148,6 +159,80 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
         }
     }
 
+    const toggleSablon = (cartId) => {
+        setExpandedSablon((prev) => ({ ...prev, [cartId]: !prev[cartId] }))
+    }
+
+    const selectSablonPosition = (cartId, position) => {
+        const price = sablonPrices.find((s) => s.position === position)?.price || 0
+        setSablonData((prev) => ({
+            ...prev,
+            [cartId]: { ...prev[cartId], position, price },
+        }))
+    }
+
+    const handleFileSelect = (cartId, file) => {
+        if (!file) return
+
+        const previewUrl = URL.createObjectURL(file)
+        setSablonData((prev) => ({
+            ...prev,
+            [cartId]: { ...prev[cartId], preview: previewUrl },
+        }))
+
+        const formData = new FormData()
+        formData.append('image', file)
+        formData.append('cart_id', cartId)
+
+        setSablonUploading((prev) => ({ ...prev, [cartId]: true }))
+        requestJson('/checkout/upload-sablon', {
+            method: 'POST',
+            body: formData,
+            headers: {},
+        })
+            .then((result) => {
+                setSablonData((prev) => ({
+                    ...prev,
+                    [cartId]: { ...prev[cartId], image: result.path },
+                }))
+            })
+            .catch((error) => {
+                Swal.fire('Gagal upload', error.message, 'error')
+            })
+            .finally(() => {
+                setSablonUploading((prev) => ({ ...prev, [cartId]: false }))
+            })
+    }
+
+    const removeSablon = (cartId) => {
+        setSablonData((prev) => {
+            const next = { ...prev }
+            delete next[cartId]
+            return next
+        })
+        setExpandedSablon((prev) => ({ ...prev, [cartId]: false }))
+    }
+
+    const sablonPositionStyles = {
+        sleeve: { top: '20%', left: '2%', width: '32%', height: '22%', objectFit: 'cover', opacity: '0.85' },
+        left_chest: { top: '26%', left: '6%', width: '22%', height: '18%', objectFit: 'cover', opacity: '0.85' },
+        center_chest: { top: '26%', left: '40%', width: '22%', height: '18%', objectFit: 'cover', opacity: '0.85' },
+        full_front: { top: '15%', left: '20%', width: '60%', height: '55%', objectFit: 'cover', opacity: '0.85' },
+        oversize_front: { top: '8%', left: '10%', width: '80%', height: '75%', objectFit: 'cover', opacity: '0.85' },
+    }
+
+    const getPreviewImage = (item, position) => {
+        if (position === 'sleeve') {
+            return item.images?.samping || item.image
+        }
+        return item.images?.depan || item.image
+    }
+
+    const getPositionName = (pos) => {
+        const found = sablonPrices.find((s) => s.position === pos)
+        return found?.label || pos
+    }
+
     useEffect(() => {
         if (savedDestination && rajaReady && shippingOptions.length === 0 && !loadingCost) {
             chooseDestination(savedDestination)
@@ -181,6 +266,13 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
 
         try {
             setProcessing(true)
+            const sablonItems = Object.entries(sablonData).map(([cartId, data]) => ({
+                cart_id: Number(cartId),
+                position: data.position || null,
+                price: data.price || 0,
+                image: data.image || null,
+            }))
+
             const result = await requestJson('/checkout', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -191,6 +283,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                     layanan_kurir: selectedShipping.service,
                     estimasi: selectedShipping.etd || '',
                     ongkir: Number(selectedShipping.cost || 0),
+                    sablon_items: sablonItems.length > 0 ? sablonItems : undefined,
                 }),
             })
 
@@ -403,17 +496,188 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                         <aside className="lg:sticky lg:top-24 lg:self-start">
                             <section className="rounded-3xl border border-gray-200 bg-white p-4 shadow-xl shadow-gray-950/5 sm:p-5">
                                 <h2 className="text-xl font-black">Ringkasan</h2>
-                                <div className="mt-4 max-h-[330px] space-y-3 overflow-y-auto pr-1">
-                                    {cartItems.map((item) => (
-                                        <div key={item.id} className="flex gap-3">
-                                            <img src={item.image} alt={item.nama_produk} className="h-16 w-16 rounded-2xl object-cover" />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-black">{item.nama_produk}</p>
-                                                <p className="text-xs text-gray-500">Ukuran {item.ukuran} x {item.qty}</p>
-                                                <p className="mt-1 text-sm font-bold">{formatRupiah(item.harga * item.qty)}</p>
+                                <div className="mt-4 max-h-[500px] space-y-3 overflow-y-auto pr-1">
+                                    {cartItems.map((item) => {
+                                        const sablon = sablonData[item.id]
+                                        const hasImage = sablon?.image || sablon?.preview
+                                        const isOpen = expandedSablon[item.id]
+                                        return (
+                                            <div key={item.id} className="rounded-2xl border border-gray-100 p-3">
+                                                <div className="flex gap-3">
+                                                    <img src={item.image} alt={item.nama_produk} className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-black">{item.nama_produk}</p>
+                                                        <p className="text-xs text-gray-500">Ukuran {item.ukuran} x {item.qty}</p>
+                                                        <p className="mt-0.5 text-sm font-bold">{formatRupiah(item.harga * item.qty)}</p>
+                                                    </div>
+                                                </div>
+
+                                                {sablon?.position ? (
+                                                    <div className="mt-2 flex items-center justify-between rounded-xl bg-gray-950/5 px-3 py-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold">
+                                                            <i className="fas fa-palette text-gray-950"></i>
+                                                            <span>Sablon {getPositionName(sablon.position)}</span>
+                                                            <span className="text-gray-950">+{formatRupiah(sablon.price)}</span>
+                                                            {hasImage && <i className="fas fa-check-circle text-green-600 text-xs"></i>}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button type="button" onClick={() => toggleSablon(item.id)} className="text-xs text-gray-600 hover:text-gray-950">
+                                                                <i className="fas fa-pen"></i>
+                                                            </button>
+                                                            <button type="button" onClick={() => removeSablon(item.id)} className="text-xs text-red-600 hover:text-red-800">
+                                                                <i className="fas fa-xmark"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button type="button" onClick={() => toggleSablon(item.id)} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-300 py-2 text-xs font-semibold text-gray-600 hover:border-gray-950 hover:text-gray-950">
+                                                        <i className="fas fa-plus"></i>
+                                                        Tambah Sablon
+                                                    </button>
+                                                )}
+
+                                                {isOpen && (
+                                                    <div className="mt-3 space-y-3">
+                                                        <div>
+                                                            <p className="mb-1.5 text-xs font-bold text-gray-700">Pilih posisi</p>
+                                                            <div className="grid grid-cols-2 gap-1.5">
+                                                                {sablonPrices.map((sp) => (
+                                                                    <button
+                                                                        key={sp.position}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            selectSablonPosition(item.id, sp.position)
+                                                                            if (!sablon?.position) setExpandedSablon((prev) => ({ ...prev, [item.id]: true }))
+                                                                        }}
+                                                                        className="rounded-lg border px-2 py-1.5 text-left text-xs transition hover:border-gray-950 data-[active=true]:border-gray-950 data-[active=true]:bg-gray-950 data-[active=true]:text-white"
+                                                                        data-active={sablon?.position === sp.position}
+                                                                    >
+                                                                        <p className="font-semibold">{sp.label}</p>
+                                                                        <p className="mt-0.5 opacity-70">+{formatRupiah(sp.price)}</p>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {sablon?.position && (
+                                                            <>
+                                                                <div>
+                                                                    <p className="mb-1.5 text-xs font-bold text-gray-700">Upload desain</p>
+                                                                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-3 text-xs text-gray-600 hover:border-gray-950 hover:text-gray-950">
+                                                                        {hasImage ? (
+                                                                            <span className="flex items-center gap-2">
+                                                                                <i className="fas fa-check-circle text-green-600"></i>
+                                                                                Ganti gambar
+                                                                            </span>
+                                                                        ) : (
+                                                                            <>
+                                                                                <i className="fas fa-cloud-arrow-up"></i>
+                                                                                {sablonUploading[item.id] ? 'Mengupload...' : 'Pilih gambar'}
+                                                                            </>
+                                                                        )}
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/png,image/jpeg"
+                                                                            className="hidden"
+                                                                            disabled={sablonUploading[item.id]}
+                                                                            onChange={(e) => {
+                                                                                const file = e.target.files?.[0]
+                                                                                if (file) handleFileSelect(item.id, file)
+                                                                                e.target.value = ''
+                                                                            }}
+                                                                        />
+                                                                    </label>
+                                                                </div>
+
+                                                                {sablon?.preview && (
+                                                                    <div>
+                                                                        <p className="mb-1.5 text-xs font-bold text-gray-700">Preview di produk</p>
+                                                                        <p className="mb-1.5 text-xs text-gray-500">Seret gambar sablon untuk atur posisi</p>
+                                                                        <div
+                                                                            className="relative mx-auto max-w-[200px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm select-none"
+                                                                            onMouseMove={(e) => {
+                                                                                if (dragging?.cartId === item.id) {
+                                                                                    const dx = e.clientX - dragging.startX
+                                                                                    const dy = e.clientY - dragging.startY
+                                                                                    setSablonOffsets((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: { x: dragging.origX + dx, y: dragging.origY + dy },
+                                                                                    }))
+                                                                                }
+                                                                            }}
+                                                                            onMouseUp={() => setDragging(null)}
+                                                                            onMouseLeave={() => setDragging(null)}
+                                                                            onTouchMove={(e) => {
+                                                                                if (dragging?.cartId === item.id) {
+                                                                                    const touch = e.touches[0]
+                                                                                    const dx = touch.clientX - dragging.startX
+                                                                                    const dy = touch.clientY - dragging.startY
+                                                                                    setSablonOffsets((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: { x: dragging.origX + dx, y: dragging.origY + dy },
+                                                                                    }))
+                                                                                }
+                                                                            }}
+                                                                            onTouchEnd={() => setDragging(null)}
+                                                                        >
+                                                                            <img
+                                                                                src={getPreviewImage(item, sablon.position)}
+                                                                                alt={item.nama_produk}
+                                                                                className="w-full pointer-events-none"
+                                                                            />
+                                                                            <img
+                                                                                src={sablon.preview}
+                                                                                alt="Desain sablon"
+                                                                                draggable={false}
+                                                                                onMouseDown={(e) => {
+                                                                                    e.preventDefault()
+                                                                                    setDragging({
+                                                                                        cartId: item.id,
+                                                                                        startX: e.clientX,
+                                                                                        startY: e.clientY,
+                                                                                        origX: sablonOffsets[item.id]?.x || 0,
+                                                                                        origY: sablonOffsets[item.id]?.y || 0,
+                                                                                    })
+                                                                                }}
+                                                                                onTouchStart={(e) => {
+                                                                                    const touch = e.touches[0]
+                                                                                    setDragging({
+                                                                                        cartId: item.id,
+                                                                                        startX: touch.clientX,
+                                                                                        startY: touch.clientY,
+                                                                                        origX: sablonOffsets[item.id]?.x || 0,
+                                                                                        origY: sablonOffsets[item.id]?.y || 0,
+                                                                                    })
+                                                                                }}
+                                                                                className="absolute rounded-sm cursor-grab active:cursor-grabbing"
+                                                                                style={{
+                                                                                    ...sablonPositionStyles[sablon.position],
+                                                                                    left: `calc(${sablonPositionStyles[sablon.position]?.left || '0%'} + ${sablonOffsets[item.id]?.x || 0}px)`,
+                                                                                    top: `calc(${sablonPositionStyles[sablon.position]?.top || '0%'} + ${sablonOffsets[item.id]?.y || 0}px)`,
+                                                                                    opacity: dragging?.cartId === item.id ? '0.7' : '0.85',
+                                                                                    transition: dragging?.cartId === item.id ? 'none' : 'opacity 0.2s',
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                        <p className="mt-1 text-center text-xs text-gray-500">
+                                                                            {sablon.position === 'sleeve' ? 'Tampak samping' : 'Tampak depan'}
+                                                                            {sablonOffsets[item.id] && (sablonOffsets[item.id].x !== 0 || sablonOffsets[item.id].y !== 0) && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setSablonOffsets((prev) => ({ ...prev, [item.id]: { x: 0, y: 0 } }))}
+                                                                                    className="ml-2 text-gray-950 underline hover:no-underline"
+                                                                                >Reset</button>
+                                                                            )}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
 
                                 <div className="mt-5 space-y-3 border-t border-gray-200 pt-4 text-sm">

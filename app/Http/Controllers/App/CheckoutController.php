@@ -8,6 +8,8 @@ use App\Models\Keranjang;
 use App\Models\Order;
 use App\Models\Pembayaran;
 use App\Models\Profil;
+use App\Models\SablonPrice;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -28,6 +30,11 @@ class CheckoutController extends Controller
             'cartItems' => $this->cartPayload($cart),
             'profil' => Profil::where('id_user', $request->user()->id)->first(),
             'alamat' => Alamat::where('id_user', $request->user()->id)->first(),
+            'sablonPrices' => SablonPrice::all()->map(fn ($s) => [
+                'position' => $s->position,
+                'label' => $s->label,
+                'price' => (int) $s->price,
+            ])->values()->all(),
             'checkoutConfig' => [
                 'midtransReady' => filled(config('services.midtrans.server_key')),
                 'rajaongkirReady' => filled(config('services.rajaongkir.key')) && filled(config('services.rajaongkir.origin_id')),
@@ -99,6 +106,20 @@ class CheckoutController extends Controller
         ]);
     }
 
+    public function uploadSablon(Request $request)
+    {
+        $validated = $request->validate([
+            'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'cart_id' => 'required|integer',
+        ]);
+
+        $path = $request->file('image')->store('sablon', 'public');
+
+        return response()->json([
+            'path' => '/storage/' . $path,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -111,17 +132,24 @@ class CheckoutController extends Controller
             'layanan_kurir' => 'required|string|max:80',
             'estimasi' => 'nullable|string|max:40',
             'ongkir' => 'required|integer|min:0',
+            'sablon_items' => 'nullable|array',
+            'sablon_items.*.cart_id' => 'required|integer',
+            'sablon_items.*.position' => 'nullable|string|max:50',
+            'sablon_items.*.price' => 'nullable|integer|min:0',
+            'sablon_items.*.image' => 'nullable|string|max:255',
         ]);
 
         $cart = $this->cartItems($request->user()->id);
         abort_if($cart->isEmpty(), 422, 'Keranjang masih kosong.');
 
-        $subtotal = $cart->sum(fn ($item) => (int) $item->harga * (int) $item->qty);
+        $sablonItems = collect($validated['sablon_items'] ?? [])->keyBy('cart_id');
+        $sablonTotal = $sablonItems->sum(fn ($s) => isset($s['price']) ? (int) $s['price'] : 0);
+        $subtotal = $cart->sum(fn ($item) => (int) $item->harga * (int) $item->qty) + $sablonTotal;
         $grandTotal = $subtotal + (int) $validated['ongkir'];
         $kodeOrder = 'ORD-' . now()->format('YmdHis') . '-' . $request->user()->id;
         $midtransOrderId = $kodeOrder . '-' . Str::upper(Str::random(5));
 
-        $order = DB::transaction(function () use ($request, $validated, $cart, $subtotal, $grandTotal, $kodeOrder, $midtransOrderId) {
+        $order = DB::transaction(function () use ($request, $validated, $cart, $subtotal, $grandTotal, $kodeOrder, $midtransOrderId, $sablonItems) {
             $order = Order::create([
                 'kode_order' => $kodeOrder,
                 'id_user' => $request->user()->id,
@@ -143,7 +171,10 @@ class CheckoutController extends Controller
                 'tanggal' => now()->format('Y-m-d'),
             ]);
 
-            $cart->each(function ($item) use ($order) {
+            $cart->each(function ($item) use ($order, $sablonItems) {
+                $sablon = $sablonItems->get($item->id);
+                $sablonPrice = isset($sablon['price']) ? (int) $sablon['price'] : 0;
+
                 $order->items()->create([
                     'produk_id' => $item->id_produk,
                     'nama_produk' => $item->produk?->nama_produk ?: 'Produk',
@@ -154,6 +185,9 @@ class CheckoutController extends Controller
                     'image' => $item->produk?->gambarproduk?->first()?->image
                         ? '/storage/' . $item->produk->gambarproduk->first()->image
                         : null,
+                    'sablon_position' => $sablon['position'] ?? null,
+                    'sablon_price' => $sablonPrice,
+                    'sablon_image' => $sablon['image'] ?? null,
                 ]);
             });
 
@@ -335,6 +369,14 @@ class CheckoutController extends Controller
     private function cartPayload($cart): array
     {
         return $cart->map(function ($item) {
+            $images = $item->produk?->gambarproduk ?? collect();
+            $defaultImage = 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80';
+
+            $imageByPos = [];
+            foreach ($images as $g) {
+                $imageByPos[$g->posisi ?? 'default'] = '/storage/' . $g->image;
+            }
+
             return [
                 'id' => $item->id,
                 'product_id' => $item->id_produk,
@@ -343,9 +385,12 @@ class CheckoutController extends Controller
                 'qty' => (int) $item->qty,
                 'ukuran' => $item->ukuran,
                 'total_harga' => (int) $item->harga * (int) $item->qty,
-                'image' => $item->produk?->gambarproduk?->first()?->image
-                    ? '/storage/' . $item->produk->gambarproduk->first()->image
-                    : 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80',
+                'image' => $imageByPos['depan'] ?? $imageByPos['default'] ?? $defaultImage,
+                'images' => [
+                    'depan' => $imageByPos['depan'] ?? null,
+                    'samping' => $imageByPos['samping'] ?? null,
+                    'belakang' => $imageByPos['belakang'] ?? null,
+                ],
             ];
         })->values()->all();
     }
@@ -358,6 +403,17 @@ class CheckoutController extends Controller
             'quantity' => (int) $item->qty,
             'name' => Str::limit($item->produk?->nama_produk ?: 'Produk', 45, ''),
         ])->values()->all();
+
+        $order->items->each(function ($item) use (&$items) {
+            if ($item->sablon_position && $item->sablon_price) {
+                $items[] = [
+                    'id' => 'SABLON-' . $item->produk_id,
+                    'price' => (int) $item->sablon_price,
+                    'quantity' => (int) $item->qty,
+                    'name' => Str::limit('Sablon ' . $item->nama_produk, 45, ''),
+                ];
+            }
+        });
 
         $items[] = [
             'id' => 'ONGKIR',
