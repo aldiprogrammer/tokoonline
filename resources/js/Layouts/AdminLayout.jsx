@@ -45,7 +45,7 @@ export default function AdminLayout({ children }) {
                 {/* SIDEBAR */}
                 <div className="w-72 bg-base-100/70 backdrop-blur-xl border-r border-base-300 shadow-lg">
                     <div className="p-6 text-2xl font-bold tracking-wide">
-                        <i class="fa-solid fa-bag-shopping text-blue"></i> Admin Febrinox
+                        <i class="fa-solid fa-bag-shopping text-blue"></i> Admin Febrinoxere
                     </div>
 
                     <ul className="menu px-4 gap-2 text-base">
