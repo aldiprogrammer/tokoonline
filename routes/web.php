@@ -5,6 +5,7 @@ use App\Http\Controllers\admin\KategoriController;
 use App\Http\Controllers\admin\OrderController;
 use App\Http\Controllers\admin\PenggunaController;
 use App\Http\Controllers\admin\ProdukCotroller;
+use App\Http\Controllers\admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\admin\ReportController;
 use App\Http\Controllers\admin\RoleController;
 use App\Http\Controllers\App\CartController;
@@ -74,6 +75,7 @@ Route::post('/midtrans/notification', [CheckoutController::class, 'notification'
 Route::middleware('pengguna.session')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/order', [OrderController::class, 'index'])->name('admin.order');
+    Route::get('/admin/order-hari-ini', [OrderController::class, 'hariIni'])->name('admin.order.hari-ini');
     Route::put('/admin/order/{order}/status-pengiriman', [OrderController::class, 'updateStatus'])->name('admin.order.status-pengiriman');
     Route::put('/admin/order/{order}/resi', [OrderController::class, 'updateResi'])->name('admin.order.resi');
     Route::get('/admin/kategori', [KategoriController::class, 'index'])->name('admin.kategori');
@@ -97,6 +99,7 @@ Route::middleware('pengguna.session')->group(function () {
     Route::put('/admin/produk/{id}', [ProdukCotroller::class, 'update'])->name('update.admin.produk');
     Route::delete('/admin/produk/{id}', [ProdukCotroller::class, 'delete'])->name('delete.admin.produk');
 
+    Route::get('/admin/customer', [AdminCustomerController::class, 'index'])->name('admin.customer');
     Route::get('/admin/laporan', [ReportController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan/pdf', [ReportController::class, 'exportPdf'])->name('admin.laporan.pdf');
 });

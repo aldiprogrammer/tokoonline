@@ -508,7 +508,15 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                     <div className="min-w-0 flex-1">
                                                         <p className="truncate text-sm font-black">{item.nama_produk}</p>
                                                         <p className="text-xs text-gray-500">Ukuran {item.ukuran} x {item.qty}</p>
-                                                        <p className="mt-0.5 text-sm font-bold">{formatRupiah(item.harga * item.qty)}</p>
+                                                        {Number(item.diskon) > 0 ? (
+                                                            <div className="mt-0.5 flex items-center gap-2">
+                                                                <p className="text-xs text-gray-400 line-through">{formatRupiah(item.harga_asli * item.qty)}</p>
+                                                                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">-{item.diskon}%</span>
+                                                                <p className="text-sm font-bold text-red-600">{formatRupiah(item.harga * item.qty)}</p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="mt-0.5 text-sm font-bold">{formatRupiah(item.harga * item.qty)}</p>
+                                                        )}
                                                     </div>
                                                 </div>
 

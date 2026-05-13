@@ -94,7 +94,7 @@ export default function ResetPassword({ token, email }) {
                         </form>
 
                         <Link href="/" className="mt-6 inline-flex text-sm font-bold text-gray-950 hover:underline">
-                            Kembali ke toko
+                            Kembali ke halaman utama
                         </Link>
                     </div>
                 </div>

@@ -189,6 +189,12 @@ class CheckoutController extends Controller
                     'sablon_price' => $sablonPrice,
                     'sablon_image' => $sablon['image'] ?? null,
                 ]);
+
+                $product = $item->produk;
+                if ($product) {
+                    $newStok = max(0, (int) $product->stok - (int) $item->qty);
+                    $product->update(['stok' => (string) $newStok]);
+                }
             });
 
             Keranjang::where('id_user', $request->user()->id)->delete();
@@ -382,6 +388,8 @@ class CheckoutController extends Controller
                 'product_id' => $item->id_produk,
                 'nama_produk' => $item->produk?->nama_produk,
                 'harga' => (int) $item->harga,
+                'harga_asli' => (int) ($item->produk?->harga ?? $item->harga),
+                'diskon' => (int) ($item->produk?->diskon ?? 0),
                 'qty' => (int) $item->qty,
                 'ukuran' => $item->ukuran,
                 'total_harga' => (int) $item->harga * (int) $item->qty,

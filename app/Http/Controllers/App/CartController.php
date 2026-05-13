@@ -29,13 +29,17 @@ class CartController extends Controller
             ->where('ukuran', $request->ukuran)
             ->first();
 
+        $hargaAsli = (int) $produk->harga;
+        $diskon = (int) $produk->diskon;
+        $hargaEfektif = $diskon > 0 ? $hargaAsli - (int) ($hargaAsli * $diskon / 100) : $hargaAsli;
         $qty = $cart
             ? min($cart->qty + $request->qty, (int) $produk->stok)
             : min($request->qty, (int) $produk->stok);
 
         if ($cart) {
             $cart->qty = $qty;
-            $cart->total_harga = (int) $produk->harga * $qty;
+            $cart->harga = $hargaEfektif;
+            $cart->total_harga = $hargaEfektif * $qty;
             $cart->save();
         } else {
             $cart = new Keranjang();
@@ -43,9 +47,9 @@ class CartController extends Controller
             $cart->kode_order = 'CART-' . $request->user()->id;
             $cart->id_produk = $produk->id;
             $cart->ukuran = $request->ukuran;
-            $cart->harga = $produk->harga;
+            $cart->harga = $hargaEfektif;
             $cart->qty = $qty;
-            $cart->total_harga = (int) $produk->harga * $qty;
+            $cart->total_harga = $hargaEfektif * $qty;
             $cart->tanggal = now()->format('Y-m-d');
             $cart->save();
         }
@@ -155,6 +159,8 @@ class CartController extends Controller
                     'product_id' => $item->id_produk,
                     'nama_produk' => $item->produk?->nama_produk,
                     'harga' => (int) $item->harga,
+                    'harga_asli' => (int) ($item->produk?->harga ?? $item->harga),
+                    'diskon' => (int) ($item->produk?->diskon ?? 0),
                     'qty' => (int) $item->qty,
                     'stok' => (int) ($item->produk?->stok ?? 0),
                     'ukuran' => $item->ukuran,

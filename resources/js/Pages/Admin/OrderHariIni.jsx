@@ -2,18 +2,12 @@ import AdminLayout from '@/Layouts/AdminLayout'
 import { router } from '@inertiajs/react'
 import React, { useState } from 'react'
 
-export default function Order({ orders, statusPengiriman = [] }) {
+export default function OrderHariIni({ orders, statusPengiriman = [] }) {
     const ordersData = orders?.data ?? orders ?? []
     const ordersLinks = orders?.links ?? []
     const [detailOrder, setDetailOrder] = useState(null)
 
-    const formatRupiah = (value) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            maximumFractionDigits: 0,
-        }).format(Number(value || 0))
-    }
+    const formatRupiah = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(v || 0))
 
     const updateStatus = (orderId, status) => {
         router.put(`/admin/order/${orderId}/status-pengiriman`, {
@@ -31,128 +25,77 @@ export default function Order({ orders, statusPengiriman = [] }) {
         return statusPengiriman.find((s) => Number(s.value) === Number(value))?.label || 'Pesanan dibuat'
     }
 
-    const paymentClass = (order) => {
-        return Number(order.status_pembayaran || 0) > 0 ? 'badge-success' : 'badge-warning'
-    }
+    const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
     return (
         <AdminLayout>
             <div className="rounded-2xl bg-base-100/80 p-6 shadow-lg">
                 <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-base-content/60">Manajemen Order</p>
-                        <h1 className="mt-1 text-2xl font-bold">Data order, resi, dan status pengiriman</h1>
+                        <p className="text-sm font-semibold text-base-content/60">Order Hari Ini</p>
+                        <h1 className="mt-1 text-2xl font-bold">{today}</h1>
                     </div>
                     <div className="stats shadow">
                         <div className="stat py-3">
-                            <div className="stat-title text-xs">Total order</div>
+                            <div className="stat-title text-xs">Order hari ini</div>
                             <div className="stat-value text-2xl">{ordersData.length}</div>
                         </div>
                     </div>
                 </div>
 
-                <div className="hidden md:block overflow-x-auto">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Kode Order</th>
-                                <th>Penerima</th>
-                                <th>Pengiriman</th>
-                                <th>Total</th>
-                                <th>Pembayaran</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ordersData.length > 0 ? (
-                                ordersData.map((order) => (
-                                    <tr key={order.id} className="hover">
-                                        <td>
-                                            <p className="font-bold">{order.kode_order}</p>
-                                            <p className="text-xs text-base-content/50">{order.tanggal || '-'}</p>
-                                        </td>
-                                        <td>
-                                            <p className="font-semibold">{order.nama_penerima || '-'}</p>
-                                            <p className="text-xs text-base-content/50">{order.whatsapp || '-'}</p>
-                                        </td>
-                                        <td>
-                                            <p className="max-w-56 truncate font-semibold">{order.destination_label || '-'}</p>
-                                            <p className="text-xs uppercase text-base-content/50">
-                                                {order.kurir || '-'} {order.layanan_kurir || ''}
-                                            </p>
-                                        </td>
-                                        <td className="font-bold">{formatRupiah(order.total_harga)}</td>
-                                        <td>
-                                            <span className={`badge ${paymentClass(order)}`}>
+                {ordersData.length > 0 ? (
+                    <div className="space-y-4">
+                        {ordersData.map((order) => (
+                            <div key={order.id} className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <p className="font-bold">{order.kode_order}</p>
+                                                <p className="text-xs text-base-content/50">{order.created_at ? new Date(order.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}</p>
+                                            </div>
+                                            <span className={`badge ${Number(order.status_pembayaran || 0) > 0 ? 'badge-success' : 'badge-warning'}`}>
                                                 {Number(order.status_pembayaran || 0) > 0 ? 'Lunas' : 'Menunggu'}
                                             </span>
-                                        </td>
-                                        <td>
-                                            <button
-                                                type="button"
-                                                onClick={() => setDetailOrder(order)}
-                                                className="btn btn-primary btn-sm gap-1"
-                                            >
-                                                Detail
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="6" className="py-10 text-center text-base-content/60">
-                                        Belum ada order.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="md:hidden space-y-3">
-                    {ordersData.length > 0 ? (
-                        ordersData.map((order) => (
-                            <div key={order.id} className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
-                                <div className="mb-3 flex items-start justify-between gap-2">
-                                    <div>
-                                        <p className="font-bold text-sm">{order.kode_order}</p>
-                                        <p className="text-xs text-base-content/50">{order.tanggal || '-'}</p>
+                                        </div>
+                                        <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
+                                            <div>
+                                                <span className="text-base-content/50 text-xs">Penerima</span>
+                                                <p className="font-semibold">{order.nama_penerima || '-'}</p>
+                                                <p className="text-xs text-base-content/50">{order.whatsapp || '-'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-base-content/50 text-xs">Customer</span>
+                                                <p className="font-semibold">{order.user?.name || order.user?.email || '-'}</p>
+                                                <p className="text-xs text-base-content/50">{order.user?.email || '-'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-base-content/50 text-xs">Total</span>
+                                                <p className="font-bold">{formatRupiah(order.total_harga)}</p>
+                                                <span className="badge badge-info badge-outline badge-xs mt-1">{statusLabel(order.status_pengiriman)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 text-xs text-base-content/50 truncate">
+                                            {order.destination_label || '-'} &middot; {order.kurir || '-'} {order.layanan_kurir || ''}
+                                        </div>
                                     </div>
-                                    <span className={`badge badge-sm ${paymentClass(order)}`}>
-                                        {Number(order.status_pembayaran || 0) > 0 ? 'Lunas' : 'Menunggu'}
-                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailOrder(order)}
+                                        className="btn btn-primary btn-sm"
+                                    >
+                                        Detail
+                                    </button>
                                 </div>
-                                <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <span className="text-base-content/50">Penerima</span>
-                                        <p className="font-semibold truncate">{order.nama_penerima || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-base-content/50">Total</span>
-                                        <p className="font-bold">{formatRupiah(order.total_harga)}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <span className="text-base-content/50">Tujuan</span>
-                                        <p className="font-semibold truncate">{order.destination_label || '-'}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <span className="text-base-content/50">Status</span>
-                                        <span className="badge badge-info badge-outline badge-sm ml-1">{statusLabel(order.status_pengiriman)}</span>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setDetailOrder(order)}
-                                    className="btn btn-primary btn-xs w-full"
-                                >
-                                    Detail
-                                </button>
                             </div>
-                        ))
-                    ) : (
-                        <p className="py-10 text-center text-base-content/60">Belum ada order.</p>
-                    )}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-16 text-center text-base-content/60">
+                        <i className="fas fa-calendar-day text-4xl mb-3 block opacity-50"></i>
+                        <p className="font-semibold">Belum ada order hari ini.</p>
+                    </div>
+                )}
             </div>
 
             {ordersLinks.length > 3 && (
@@ -203,6 +146,11 @@ export default function Order({ orders, statusPengiriman = [] }) {
                                 <p>{detailOrder.whatsapp || '-'}</p>
                             </div>
                             <div className="sm:col-span-2">
+                                <span className="font-semibold text-gray-500">Customer</span>
+                                <p className="font-bold">{detailOrder.user?.name || detailOrder.user?.email || '-'}</p>
+                                <p className="text-xs text-gray-500">{detailOrder.user?.email || '-'}</p>
+                            </div>
+                            <div className="sm:col-span-2">
                                 <span className="font-semibold text-gray-500">Alamat Pengiriman</span>
                                 <p>{detailOrder.alamat_pengiriman || '-'}</p>
                             </div>
@@ -233,7 +181,7 @@ export default function Order({ orders, statusPengiriman = [] }) {
                             <div>
                                 <span className="font-semibold text-gray-500">Status Pembayaran</span>
                                 <p>
-                                    <span className={`badge ${paymentClass(detailOrder)}`}>
+                                    <span className={`badge ${Number(detailOrder.status_pembayaran || 0) > 0 ? 'badge-success' : 'badge-warning'}`}>
                                         {Number(detailOrder.status_pembayaran || 0) > 0 ? 'Lunas' : 'Menunggu'}
                                     </span>
                                 </p>
@@ -243,7 +191,7 @@ export default function Order({ orders, statusPengiriman = [] }) {
                                 <select
                                     value={Number(detailOrder.status_pengiriman || 0)}
                                     onChange={(e) => updateStatus(detailOrder.id, e.target.value)}
-                                    className="select select-bordered  w-full mt-1"
+                                    className="select select-bordered select-sm w-full mt-1"
                                 >
                                     {statusPengiriman.map((s) => (
                                         <option key={s.value} value={s.value}>{s.label}</option>
@@ -256,7 +204,7 @@ export default function Order({ orders, statusPengiriman = [] }) {
                                     type="text"
                                     defaultValue={detailOrder.no_resi || ''}
                                     placeholder="Input nomor resi"
-                                    className="input input-bordered  w-full mt-1"
+                                    className="input input-bordered input-sm w-full mt-1"
                                     onBlur={(e) => {
                                         const val = e.target.value.trim()
                                         if (val !== (detailOrder.no_resi || '')) {

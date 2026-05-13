@@ -39,10 +39,10 @@ export default function Register() {
                         </Link>
 
                         <div className="mb-6">
-                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Daftar Akun</p>
+                            {/* <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Daftar Akun</p> */}
                             <h1 className="mt-2 text-3xl font-black">Buat akun baru</h1>
                             <p className="mt-2 text-sm leading-6 text-gray-600">
-                                Daftar dulu supaya kamu bisa belanja dan mendapatkan penawaran terbaik.
+                                Isi data di bawah ini agar anda dapat login
                             </p>
                         </div>
 
@@ -118,7 +118,7 @@ export default function Register() {
                         </div>
 
                         <Link href="/" className="mt-6 inline-flex text-sm font-bold text-gray-950 hover:underline">
-                            Kembali ke toko
+                            Kembali ke halaman utama
                         </Link>
                     </div>
                 </div>

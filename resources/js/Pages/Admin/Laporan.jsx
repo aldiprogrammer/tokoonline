@@ -2,18 +2,27 @@ import AdminLayout from '@/Layouts/AdminLayout'
 import { router } from '@inertiajs/react'
 import React, { useState } from 'react'
 
-export default function Laporan({ grouped = [], grandTotal = 0, bulan, tahun, totalOrder = 0, bulanList = [], tahunList = [] }) {
+export default function Laporan({ grouped = [], grandTotal = 0, bulan, tahun, totalOrder = 0, bulanList = [], tahunList = [], startDate, endDate }) {
     const [selectedBulan, setSelectedBulan] = useState(bulan)
     const [selectedTahun, setSelectedTahun] = useState(tahun)
+    const [selectedStart, setSelectedStart] = useState(startDate || '')
+    const [selectedEnd, setSelectedEnd] = useState(endDate || '')
+    const [mode, setMode] = useState('bulan')
 
     const formatRupiah = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(v || 0))
 
     const filter = () => {
-        router.get('/admin/laporan', { bulan: selectedBulan, tahun: selectedTahun }, { preserveState: true })
+        const params = mode === 'bulan'
+            ? { bulan: selectedBulan, tahun: selectedTahun }
+            : { start_date: selectedStart, end_date: selectedEnd }
+        router.get('/admin/laporan', params, { preserveState: true })
     }
 
     const exportPdf = () => {
-        window.open(`/admin/laporan/pdf?bulan=${selectedBulan}&tahun=${selectedTahun}`, '_blank')
+        const params = mode === 'bulan'
+            ? `bulan=${selectedBulan}&tahun=${selectedTahun}`
+            : `start_date=${selectedStart}&end_date=${selectedEnd}`
+        window.open(`/admin/laporan/pdf?${params}`, '_blank')
     }
 
     return (
@@ -28,22 +37,55 @@ export default function Laporan({ grouped = [], grandTotal = 0, bulan, tahun, to
 
                 <div className="bg-base-100/70 backdrop-blur rounded-2xl shadow-lg p-6">
                     <div className="flex flex-wrap items-end gap-3 mb-6">
-                        <div>
-                            <label className="text-xs font-semibold mb-1 block">Bulan</label>
-                            <select value={selectedBulan} onChange={(e) => setSelectedBulan(e.target.value)} className="select select-bordered select-sm">
-                                {bulanList.map((b) => (
-                                    <option key={b.value} value={b.value}>{b.label}</option>
-                                ))}
-                            </select>
+                        <div className="flex items-center gap-1 bg-base-200 rounded-lg p-1">
+                            <button
+                                type="button"
+                                onClick={() => setMode('bulan')}
+                                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition ${mode === 'bulan' ? 'bg-white shadow-sm' : ''}`}
+                            >
+                                Per Bulan
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMode('tanggal')}
+                                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition ${mode === 'tanggal' ? 'bg-white shadow-sm' : ''}`}
+                            >
+                                Per Tanggal
+                            </button>
                         </div>
-                        <div>
-                            <label className="text-xs font-semibold mb-1 block">Tahun</label>
-                            <select className="input input-bondered" value={selectedTahun} onChange={(e) => setSelectedTahun(e.target.value)} className="select select-bordered select-sm">
-                                {tahunList.map((t) => (
-                                    <option key={t.value} value={t.value}>{t.label}</option>
-                                ))}
-                            </select>
-                        </div>
+
+                        {mode === 'bulan' ? (
+                            <>
+                                <div>
+                                    <label className="text-xs font-semibold mb-1 block">Bulan</label>
+                                    <select value={selectedBulan} onChange={(e) => setSelectedBulan(e.target.value)} className="select select-bordered select-sm">
+                                        {bulanList.map((b) => (
+                                            <option key={b.value} value={b.value}>{b.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold mb-1 block">Tahun</label>
+                                    <select value={selectedTahun} onChange={(e) => setSelectedTahun(e.target.value)} className="select select-bordered select-sm">
+                                        {tahunList.map((t) => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <label className="text-xs font-semibold mb-1 block">Dari Tanggal</label>
+                                    <input type="date" value={selectedStart} onChange={(e) => setSelectedStart(e.target.value)} className="input input-bordered input-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold mb-1 block">Sampai Tanggal</label>
+                                    <input type="date" value={selectedEnd} onChange={(e) => setSelectedEnd(e.target.value)} className="input input-bordered input-sm" />
+                                </div>
+                            </>
+                        )}
+
                         <button onClick={filter} className="btn btn-primary btn-sm">Tampilkan</button>
                         <button onClick={exportPdf} className="btn btn-accent btn-sm">
                             <i className="fas fa-file-pdf mr-1"></i> Export PDF

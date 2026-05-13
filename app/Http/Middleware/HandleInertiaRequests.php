@@ -46,6 +46,8 @@ class HandleInertiaRequests extends Middleware
                             'product_id' => $item->id_produk,
                             'nama_produk' => $item->produk?->nama_produk,
                             'harga' => (int) $item->harga,
+                            'harga_asli' => (int) ($item->produk?->harga ?? $item->harga),
+                            'diskon' => (int) ($item->produk?->diskon ?? 0),
                             'qty' => (int) $item->qty,
                             'stok' => (int) ($item->produk?->stok ?? 0),
                             'ukuran' => $item->ukuran,

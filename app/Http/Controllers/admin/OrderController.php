@@ -13,7 +13,18 @@ class OrderController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Order', [
-            'orders' => Order::latest()->get(),
+            'orders' => Order::with('items.produk')->latest()->paginate(10),
+            'statusPengiriman' => $this->statusPengiriman(),
+        ]);
+    }
+
+    public function hariIni()
+    {
+        return Inertia::render('Admin/OrderHariIni', [
+            'orders' => Order::with('user', 'items.produk')
+                ->whereDate('tanggal', today())
+                ->latest()
+                ->paginate(10),
             'statusPengiriman' => $this->statusPengiriman(),
         ]);
     }

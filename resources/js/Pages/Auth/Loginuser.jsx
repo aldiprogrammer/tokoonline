@@ -54,10 +54,10 @@ export default function Loginuser() {
                         </Link>
 
                         <div className="mb-6">
-                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Customer Login</p>
-                            <h1 className="mt-2 text-3xl font-black">Masuk untuk belanja</h1>
+                            {/* <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Customer Login</p> */}
+                            <h1 className="mt-2 text-3xl font-black">Login untuk belanja</h1>
                             <p className="mt-2 text-sm leading-6 text-gray-600">
-                                Login dulu supaya kamu bisa menambahkan produk ke keranjang dan lanjut checkout.
+                                Silahkan login menggunakan email dan password anda atau dengan akun google anda
                             </p>
                         </div>
 
@@ -139,7 +139,7 @@ export default function Loginuser() {
                         </a>
 
                         <Link href="/" className="mt-6 inline-flex text-sm font-bold text-gray-950 hover:underline">
-                            Kembali ke toko
+                            Kembali ke halaman utama
                         </Link>
                     </div>
                 </div>

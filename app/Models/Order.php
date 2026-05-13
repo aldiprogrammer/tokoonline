@@ -30,6 +30,11 @@ class Order extends Model
         'tanggal',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);

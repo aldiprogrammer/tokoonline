@@ -50,9 +50,11 @@ class ProdukCotroller extends Controller
         $pr->id_kategori = $request->kategori_id;
         $pr->ukuran = implode(',', $request->ukuran);
         $pr->keterangan = $request->keterangan;
-        $pr->harga = $request->harga;
-        $pr->diskon = $request->diskon;
-        $pr->harga_diskon = 000;
+        $harga = (int) $request->harga;
+        $diskon = (int) $request->diskon;
+        $pr->harga = $harga;
+        $pr->diskon = $diskon;
+        $pr->harga_diskon = $diskon > 0 ? $harga - (int) ($harga * $diskon / 100) : $harga;
         $pr->slug = $slug;
         $pr->stok = $request->stok;
         $pr->save();
@@ -99,8 +101,11 @@ class ProdukCotroller extends Controller
         $pr->id_kategori = $request->kategori_id;
         $pr->ukuran = implode(',', $request->ukuran);
         $pr->keterangan = $request->keterangan;
-        $pr->harga = $request->harga;
-        $pr->diskon = $request->diskon;
+        $harga = (int) $request->harga;
+        $diskon = (int) $request->diskon;
+        $pr->harga = $harga;
+        $pr->diskon = $diskon;
+        $pr->harga_diskon = $diskon > 0 ? $harga - (int) ($harga * $diskon / 100) : $harga;
         $pr->slug = Str::slug($request->nama);
         $pr->stok = $request->stok;
         $pr->save();

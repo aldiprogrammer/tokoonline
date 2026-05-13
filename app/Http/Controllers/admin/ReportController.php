@@ -12,23 +12,31 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $bulan = $request->query('bulan', now()->format('m'));
-        $tahun = $request->query('tahun', now()->format('Y'));
+        $query = Order::where('status_pembayaran', '>', 0);
 
-        $orders = Order::whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->where('status_pembayaran', '>', 0)
-            ->orderBy('tanggal')
-            ->get()
-            ->map(function ($o) {
-                return [
-                    'tanggal' => $o->tanggal,
-                    'kode_order' => $o->kode_order,
-                    'nama_penerima' => $o->nama_penerima,
-                    'total_harga' => (int) $o->total_harga,
-                    'status_pengiriman' => (int) $o->status_pengiriman,
-                ];
-            });
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
+            $startDate = $request->start_date;
+            $endDate = $request->end_date;
+            $bulan = null;
+            $tahun = null;
+        } else {
+            $bulan = $request->query('bulan', now()->format('m'));
+            $tahun = $request->query('tahun', now()->format('Y'));
+            $query->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan);
+            $startDate = null;
+            $endDate = null;
+        }
+
+        $orders = $query->orderBy('tanggal')->get()->map(function ($o) {
+            return [
+                'tanggal' => $o->tanggal,
+                'kode_order' => $o->kode_order,
+                'nama_penerima' => $o->nama_penerima,
+                'total_harga' => (int) $o->total_harga,
+                'status_pengiriman' => (int) $o->status_pengiriman,
+            ];
+        });
 
         $grouped = $orders->groupBy('tanggal')->map(function ($items, $tgl) {
             return [
@@ -46,6 +54,8 @@ class ReportController extends Controller
             'grandTotal' => $grandTotal,
             'bulan' => $bulan,
             'tahun' => $tahun,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
             'totalOrder' => $orders->count(),
             'bulanList' => [
                 ['value' => '01', 'label' => 'Januari'],
@@ -67,14 +77,26 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $bulan = $request->query('bulan', now()->format('m'));
-        $tahun = $request->query('tahun', now()->format('Y'));
+        $query = Order::where('status_pembayaran', '>', 0);
 
-        $orders = Order::whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->where('status_pembayaran', '>', 0)
-            ->orderBy('tanggal')
-            ->get();
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
+            $periodeLabel = $request->start_date . ' s/d ' . $request->end_date;
+            $fileName = "laporan-penjualan-{$request->start_date}-{$request->end_date}.pdf";
+        } else {
+            $bulan = $request->query('bulan', now()->format('m'));
+            $tahun = $request->query('tahun', now()->format('Y'));
+            $query->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan);
+            $namaBulan = [
+                '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+                '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+                '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
+            ];
+            $periodeLabel = ($namaBulan[$bulan] ?? $bulan) . ' ' . $tahun;
+            $fileName = "laporan-penjualan-{$bulan}-{$tahun}.pdf";
+        }
+
+        $orders = $query->orderBy('tanggal')->get();
 
         $grouped = $orders->groupBy('tanggal')->map(function ($items, $tgl) {
             return [
@@ -86,20 +108,15 @@ class ReportController extends Controller
         })->values();
 
         $grandTotal = $orders->sum('total_harga');
-        $namaBulan = [
-            '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
-            '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
-            '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
-        ];
 
         $pdf = Pdf::loadView('pdf.laporan', [
             'grouped' => $grouped,
             'grandTotal' => $grandTotal,
-            'bulan' => $namaBulan[$bulan] ?? $bulan,
-            'tahun' => $tahun,
+            'bulan' => $periodeLabel,
+            'tahun' => '',
             'totalOrder' => $orders->count(),
         ]);
 
-        return $pdf->download("laporan-penjualan-{$bulan}-{$tahun}.pdf");
+        return $pdf->download($fileName);
     }
 }

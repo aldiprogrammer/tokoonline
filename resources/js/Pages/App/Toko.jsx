@@ -225,7 +225,7 @@ export default function Toko({ produk, kategori }) {
 
                                 <div className="flex items-center gap-2">
                                     <Link href='/profil'>
-                                            <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
+                                        <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
                                             {auth.user.avatar ? (
                                                 <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
                                             ) : (
@@ -356,7 +356,7 @@ export default function Toko({ produk, kategori }) {
                         {filteredProduk.length > 0 ? (
                             <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                                 {filteredProduk.map((item) => (
-                                    <article key={item.id} className="group overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-950/10">
+                                    <article key={item.id} className={`group overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-950/10 ${Number(item.stok) < 1 ? 'opacity-60' : ''}`}>
                                         <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
                                             <Link href={`/produk/${item.slug}`}>
                                                 <img
@@ -365,7 +365,14 @@ export default function Toko({ produk, kategori }) {
                                                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                                 />
                                             </Link>
-                                            {Number(item.diskon) > 0 && (
+                                            {Number(item.stok) < 1 && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                    <span className="rounded-full bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg">
+                                                        Stok Habis
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {Number(item.diskon) > 0 && Number(item.stok) > 0 && (
                                                 <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
                                                     -{item.diskon}%
                                                 </span>
@@ -414,8 +421,8 @@ export default function Toko({ produk, kategori }) {
 
                 <footer className="border-t border-gray-200 bg-white">
                     <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                        <p className="font-semibold text-gray-950">MyStore Fashion</p>
-                        <p>Belanja baju nyaman, cepat, dan responsive dari perangkat apa pun.</p>
+                        <p className="font-semibold text-gray-950">Febrinox</p>
+                        <p>Belanja baju nyaman, cepat, dan terpercaya.</p>
                     </div>
                 </footer>
 

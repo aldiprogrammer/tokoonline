@@ -6,6 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
 {
+    protected $fillable = [
+        'kode_produk',
+        'nama_produk',
+        'id_kategori',
+        'ukuran',
+        'keterangan',
+        'harga',
+        'diskon',
+        'harga_diskon',
+        'slug',
+        'stok',
+    ];
     // protected static function booted()
     // {
     //     static::creating(function ($product) {
