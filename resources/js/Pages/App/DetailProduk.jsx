@@ -97,7 +97,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                 buttonsStyling: false,
                 customClass: {
                     actions: 'gap-3',
-                    confirmButton: 'px-4 py-2 rounded-lg bg-gray-950 text-white font-semibold hover:bg-gray-800',
+                    confirmButton: 'px-4 py-2 rounded-lg bg-[#D4AF37] text-white font-semibold hover:bg-[#C5A032]',
                     cancelButton: 'px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300',
                 },
             }).then((result) => {
@@ -173,42 +173,55 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
         <>
             <Head title={produk.nama_produk} />
 
-            <div className="min-h-screen bg-gray-50 text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
-                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
-                                <i className="fas fa-shirt"></i>
+            <div className="min-h-screen bg-[#F5F2EB] text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-white/95 shadow-sm backdrop-blur-xl">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+                        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8962E] text-white shadow-lg shadow-[#D4AF37]/20">
+                                <i className="fas fa-shirt text-sm"></i>
                             </span>
-                            FEBRINOX
+                            <div className="hidden sm:block">
+                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
+                            </div>
                         </Link>
-                        <div className='flex gap-3'>
+
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
+                                className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C5A032] text-white shadow-sm shadow-[#D4AF37]/20 transition hover:shadow-md hover:shadow-[#D4AF37]/30"
                             >
-                                <i className="fas fa-bag-shopping"></i>
-                                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
-                                    {cartCount}
-                                </span>
+                                <i className="fas fa-bag-shopping text-sm"></i>
+                                {cartCount > 0 && (
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
                             </button>
-                            {auth?.user ? (
-                                <Link href='/profil'>
-                                    <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-2 shadow-sm sm:px-3">
-                                        {auth.user.avatar && <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full" />}
 
-                                    </div>
+                            {auth?.user ? (
+                                <Link href="/profil" className="group flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 transition hover:border-gray-300 hover:shadow-sm sm:px-2.5">
+                                    {auth.user.avatar ? (
+                                        <img src={auth.user.avatar} alt={auth.user.name} className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                                    ) : (
+                                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[10px] font-bold text-white">
+                                            {auth.user.name?.charAt(0)?.toUpperCase()}
+                                        </span>
+                                    )}
+                                    <span className="hidden max-w-20 truncate text-sm font-semibold text-gray-700 sm:inline">{auth.user.name}</span>
+                                    <i className="fa-solid fa-chevron-down hidden text-[10px] text-gray-400 group-hover:text-gray-600 sm:inline"></i>
                                 </Link>
                             ) : (
-                                <Link href="/loginuser" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-gray-100">Login</Link>
+                                <Link
+                                    href="/loginuser"
+                                    className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
+                                >
+                                    <i className="fas fa-user text-xs"></i>
+                                    <span className="hidden sm:inline">Masuk</span>
+                                </Link>
                             )}
-
-
-
                         </div>
-
-
                     </div>
                 </header>
 
@@ -271,7 +284,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                                             key={ukuran}
                                             type="button"
                                             onClick={() => setSelectedSize(ukuran)}
-                                            className={`h-11 min-w-12 rounded-full border px-4 text-sm font-black transition ${selectedSize === ukuran ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-800 hover:border-gray-950'}`}
+                                            className={`h-11 min-w-12 rounded-full border px-4 text-sm font-black transition ${selectedSize === ukuran ? 'border-gray-950 bg-[#D4AF37] text-white' : 'border-gray-200 bg-white text-gray-800 hover:border-gray-950'}`}
                                         >
                                             {ukuran}
                                         </button>
@@ -293,7 +306,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                                     type="button"
                                     onClick={addToCart}
                                     disabled={!selectedSize || Number(produk.stok) < 1}
-                                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-gray-950 px-5 text-sm font-black text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#D4AF37] px-5 text-sm font-black text-white shadow-lg shadow-gray-950/20 hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     <i className="fas fa-cart-shopping"></i>
                                     Tambah ke Keranjang
@@ -320,16 +333,48 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                     {produkTerkait.length > 0 && (
                         <section className="mt-14">
                             <h2 className="mb-5 text-2xl font-black">Produk Terkait</h2>
-                            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4">
-                                {produkTerkait.map((item) => (
-                                    <Link key={item.id} href={`/produk/${item.slug}`} className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-950/10">
-                                        <img src={getProductImage(item)} alt={item.nama_produk} className="aspect-[4/5] w-full object-cover transition group-hover:scale-105" />
-                                        <div className="p-3">
-                                            <p className="truncate text-sm font-bold">{item.nama_produk}</p>
-                                            <p className="mt-1 text-sm font-black">{formatRupiah(item.harga)}</p>
-                                        </div>
-                                    </Link>
-                                ))}
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+                                {produkTerkait.map((item) => {
+                                    const diskonHarga = Number(item.diskon) > 0
+                                        ? Number(item.harga) - (Number(item.harga) * Number(item.diskon) / 100)
+                                        : Number(item.harga)
+                                    return (
+                                        <Link key={item.id} href={`/produk/${item.slug}`} className="group relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
+                                            <div className="relative aspect-square overflow-hidden bg-gray-100">
+                                                <img src={getProductImage(item)} alt={item.nama_produk} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                                                {Number(item.diskon) > 0 && (
+                                                    <span className="absolute left-0 top-0 rounded-br-lg bg-red-600 px-2 py-1 text-[11px] font-bold text-white shadow-sm">
+                                                        -{item.diskon}%
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="p-3">
+                                                <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                                                    {item.kategoriproduk?.kategori || 'Fashion'}
+                                                </p>
+                                                <p className="line-clamp-2 min-h-[34px] text-sm font-semibold leading-snug text-gray-800 group-hover:text-gray-950 group-hover:underline">
+                                                    {item.nama_produk}
+                                                </p>
+                                                <div className="mt-2">
+                                                    {Number(item.diskon) > 0 ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="text-sm font-bold text-red-600">
+                                                                {formatRupiah(diskonHarga)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-400 line-through">
+                                                                {formatRupiah(item.harga)}
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-gray-950">
+                                                            {formatRupiah(item.harga)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    )
+                                })}
                             </div>
                         </section>
                     )}
@@ -352,7 +397,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                                     <article key={review.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                                         <div className="mb-3 flex items-start justify-between gap-3">
                                             <div className="flex items-center gap-3">
-                                                <span className="grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-sm font-black text-white">
+                                                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#D4AF37] text-sm font-black text-white">
                                                     {review.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                                                 </span>
                                                 <div>
@@ -464,7 +509,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                                     type="button"
                                     disabled={cart.length === 0}
                                     onClick={() => router.visit('/checkout')}
-                                    className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="w-full rounded-lg bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     Checkout
                                 </button>

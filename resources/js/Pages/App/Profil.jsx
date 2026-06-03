@@ -352,45 +352,51 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
         <>
             <Head title="Profil Customer" />
 
-            <div className="min-h-screen bg-gray-50 text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
-                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
-                                <i className="fas fa-shirt"></i>
+            <div className="min-h-screen bg-[#F5F2EB] text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-white/95 shadow-sm backdrop-blur-xl">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+                        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8962E] text-white shadow-lg shadow-[#D4AF37]/20">
+                                <i className="fas fa-shirt text-sm"></i>
                             </span>
-                            <span className="truncate">FEBRINOX</span>
+                            <div className="hidden sm:block">
+                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
+                            </div>
                         </Link>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
+                                className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C5A032] text-white shadow-sm shadow-[#D4AF37]/20 transition hover:shadow-md hover:shadow-[#D4AF37]/30"
                             >
-                                <i className="fas fa-bag-shopping"></i>
-                                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
-                                    {cartCount}
-                                </span>
+                                <i className="fas fa-bag-shopping text-sm"></i>
+                                {cartCount > 0 && (
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
                             </button>
 
-                            <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
+                            <Link href="/profil" className="group flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 transition hover:border-gray-300 hover:shadow-sm sm:px-2.5">
                                 {auth.user.avatar ? (
-                                    <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
+                                    <img src={auth.user.avatar} alt={auth.user.name} className="h-5 w-5 shrink-0 rounded-full object-cover" />
                                 ) : (
-                                    <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-950 text-xs font-bold text-white">
+                                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[10px] font-bold text-white">
                                         {auth.user.name?.charAt(0)?.toUpperCase()}
                                     </span>
                                 )}
-                                <span className="hidden max-w-32 truncate text-sm font-semibold sm:inline">{auth.user.name}</span>
-                            </div>
+                                <span className="hidden max-w-20 truncate text-sm font-semibold text-gray-700 sm:inline">{auth.user.name}</span>
+                                <i className="fa-solid fa-chevron-down hidden text-[10px] text-gray-400 group-hover:text-gray-600 sm:inline"></i>
+                            </Link>
 
                             <button
                                 type="button"
                                 onClick={logoutUser}
-                                className="hidden h-10 w-10 place-items-center rounded-full border border-gray-200 bg-white text-red-600 shadow-sm hover:bg-red-50 sm:grid"
+                                className="hidden h-9 w-9 place-items-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:bg-gray-50 hover:text-red-500 sm:grid"
                             >
-                                <i className="fas fa-right-from-bracket"></i>
+                                <i className="fas fa-right-from-bracket text-sm"></i>
                             </button>
                         </div>
                     </div>
@@ -403,7 +409,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                         <span>Profil</span>
                     </div>
 
-                    <section className="mb-6 rounded-3xl bg-gray-950 p-5 text-white shadow-xl shadow-gray-950/10 sm:p-7">
+                    <section className="mb-6 rounded-3xl bg-[#D4AF37] p-5 text-white shadow-xl shadow-gray-950/10 sm:p-7">
                         <p className="text-sm font-semibold text-white/60">Akun Customer</p>
                         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div>
@@ -437,7 +443,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setActiveMenu(item.key)}
-                                        className={`flex h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-bold transition ${activeMenu === item.key ? 'bg-gray-950 text-white shadow-lg shadow-gray-950/15' : 'text-gray-700 hover:bg-gray-100'}`}
+                                        className={`flex h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-bold transition ${activeMenu === item.key ? 'bg-[#D4AF37] text-white shadow-lg shadow-gray-950/15' : 'text-gray-700 hover:bg-gray-100'}`}
                                     >
                                         <i className={`fas ${item.icon} w-5 text-center`}></i>
                                         {item.label}
@@ -457,7 +463,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                         <button
                                             type="submit"
                                             disabled={processing}
-                                            className="rounded-full bg-gray-950 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                            className="rounded-full bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-gray-950/20 hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                         >
                                             {processing ? 'Menyimpan...' : 'Simpan'}
                                         </button>
@@ -567,7 +573,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                             <p className="mt-1 text-sm text-gray-500">Pantau posisi pesanan terakhir dari status order.</p>
                                         </div>
                                         {latestOrder && (
-                                            <span className="rounded-full bg-gray-950 px-3 py-2 text-sm font-bold text-white">
+                                            <span className="rounded-full bg-[#D4AF37] px-3 py-2 text-sm font-bold text-white">
                                                 {latestOrder.kode_order}
                                             </span>
                                         )}
@@ -696,7 +702,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                                                     type="button"
                                                                     onClick={() => payOrder(order.id)}
                                                                     disabled={payingOrderId === order.id}
-                                                                    className="flex items-center gap-2 rounded-full bg-gray-950 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                                                    className="flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                                                 >
                                                                     {payingOrderId === order.id ? (
                                                                         'Membuka...'
@@ -771,7 +777,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={() => submitReview(order, item)}
-                                                                                        className="mt-2 w-full rounded-full bg-gray-950 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                                                                                        className="mt-2 w-full rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-bold text-white hover:bg-[#C5A032]"
                                                                                     >
                                                                                         Kirim Review
                                                                                     </button>
@@ -861,7 +867,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                     type="button"
                                     disabled={cart.length === 0}
                                     onClick={() => router.visit('/checkout')}
-                                    className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="w-full rounded-lg bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     Checkout
                                 </button>

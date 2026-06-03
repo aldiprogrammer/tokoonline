@@ -22,7 +22,7 @@ export default function ResetPassword({ token, email }) {
 
             <div className="min-h-screen bg-gray-100 px-4 py-8 text-gray-950">
                 <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-6xl items-center gap-8 lg:grid-cols-2">
-                    <div className="hidden overflow-hidden rounded-2xl bg-gray-950 shadow-2xl lg:block">
+                    <div className="hidden overflow-hidden rounded-2xl bg-[#D4AF37] shadow-2xl lg:block">
                         <img
                             src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1200&q=80"
                             alt="Fashion store"
@@ -87,7 +87,7 @@ export default function ResetPassword({ token, email }) {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:opacity-50"
+                                className="w-full rounded-lg bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white hover:bg-[#C5A032] disabled:opacity-50"
                             >
                                 {processing ? 'Memproses...' : 'Reset Password'}
                             </button>

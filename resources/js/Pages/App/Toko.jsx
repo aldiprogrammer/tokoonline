@@ -109,7 +109,7 @@ export default function Toko({ produk, kategori }) {
                 buttonsStyling: false,
                 customClass: {
                     actions: 'gap-3',
-                    confirmButton: 'px-4 py-2 rounded-lg bg-gray-950 text-white font-semibold hover:bg-gray-800',
+                    confirmButton: 'px-4 py-2 rounded-lg bg-[#D4AF37] text-white font-semibold hover:bg-[#C5A032]',
                     cancelButton: 'px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300',
                 },
             }).then((result) => {
@@ -204,95 +204,171 @@ export default function Toko({ produk, kategori }) {
         <>
             <Head title="Toko Online Fashion" />
 
-            <div className="min-h-screen bg-gray-50 text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
-                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
-                                <i className="fas fa-shirt"></i>
+            <div className="min-h-screen bg-[#F5F2EB] text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-white/95 shadow-sm backdrop-blur-xl">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+                        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8962E] text-white shadow-lg shadow-[#D4AF37]/20">
+                                <i className="fas fa-shirt text-sm"></i>
                             </span>
-                            <span className="truncate">FEBRINOX</span>
+                            <div className="hidden sm:block">
+                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
+                            </div>
                         </Link>
 
-                        <nav className="hidden items-center gap-7 text-sm font-semibold text-gray-600 md:flex">
-                            <a href="#produk" className="hover:text-gray-950">Produk</a>
-                            <a href="#kategori" className="hover:text-gray-950">Kategori</a>
-                            <a href="#promo" className="hover:text-gray-950">Promo</a>
+                        <nav className="hidden items-center gap-0.5 md:flex">
+                            {[
+                                { href: '#produk', label: 'Produk' },
+                                { href: '#kategori', label: 'Kategori' },
+                                { href: '#promo', label: 'Promo' },
+                            ].map((item) => (
+                                <a
+                                    key={item.href}
+                                    href={item.href}
+                                    className="relative px-4 py-2 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-950 after:absolute after:bottom-0 after:left-4 after:right-4 after:h-0.5 after:origin-center after:scale-x-0 after:rounded-full after:bg-[#D4AF37] after:transition after:content-[''] hover:after:scale-x-100"
+                                >
+                                    {item.label}
+                                </a>
+                            ))}
                         </nav>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
+                            <button
+                                type="button"
+                                className="grid h-9 w-9 place-items-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-950"
+                            >
+                                <i className="fas fa-magnifying-glass text-sm"></i>
+                            </button>
+
                             {auth?.user ? (
-
-                                <div className="flex items-center gap-2">
-                                    <Link href='/profil'>
-                                        <div className="flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 shadow-sm sm:px-3">
-                                            {auth.user.avatar ? (
-                                                <img src={auth.user.avatar} alt={auth.user.name} className="h-6 w-6 rounded-full object-cover" />
-                                            ) : (
-                                                <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-950 text-xs font-bold text-white">
-                                                    {auth.user.name?.charAt(0)?.toUpperCase()}
-                                                </span>
-                                            )}
-                                            <span className="hidden max-w-28 truncate text-sm font-semibold sm:inline">{auth.user.name}</span>
-                                        </div>
-                                    </Link>
-                                    <button
-                                        type="button"
-                                        onClick={logoutUser}
-                                        className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 text-red-600 hover:bg-red-50 sm:grid"
-                                    >
-                                        <i className="fas fa-right-from-bracket"></i>
-                                    </button>
-                                </div>
-
+                                <Link href="/profil" className="group flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 transition hover:border-gray-300 hover:shadow-sm sm:px-2.5">
+                                    {auth.user.avatar ? (
+                                        <img src={auth.user.avatar} alt={auth.user.name} className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                                    ) : (
+                                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[10px] font-bold text-white">
+                                            {auth.user.name?.charAt(0)?.toUpperCase()}
+                                        </span>
+                                    )}
+                                    <span className="hidden max-w-20 truncate text-sm font-semibold text-gray-700 sm:inline">{auth.user.name}</span>
+                                    <i className="fa-solid fa-chevron-down hidden text-[10px] text-gray-400 group-hover:text-gray-600 sm:inline"></i>
+                                </Link>
                             ) : (
-                                <Link href="/loginuser" className="grid h-10 w-10 place-items-center rounded-full border border-gray-200 bg-white text-gray-950 shadow-sm hover:bg-gray-100 sm:w-auto sm:px-4">
-                                    <i className="fas fa-user sm:hidden"></i>
-                                    <span className="hidden text-sm font-bold sm:inline">Login</span>
+                                <Link
+                                    href="/loginuser"
+                                    className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
+                                >
+                                    <i className="fas fa-user text-xs"></i>
+                                    <span className="hidden sm:inline">Masuk</span>
                                 </Link>
                             )}
-                            {/* <button className="hidden h-10 w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100 min-[380px]:grid">
-                                <i className="fas fa-magnifying-glass"></i>
-                            </button> */}
+
                             <button
                                 type="button"
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative grid h-10 w-10 place-items-center rounded-full bg-gray-950 text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800"
+                                className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C5A032] text-white shadow-sm shadow-[#D4AF37]/20 transition hover:shadow-md hover:shadow-[#D4AF37]/30"
                             >
-                                <i className="fas fa-bag-shopping"></i>
-                                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
-                                    {cartCount}
-                                </span>
+                                <i className="fas fa-bag-shopping text-sm"></i>
+                                {cartCount > 0 && (
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>
                 </header>
 
                 <main>
-                    <section className="relative overflow-hidden bg-gray-950">
-                        <div className="absolute inset-0">
-                            <img src='https://emediaidentity.com/wp-content/uploads/2025/04/1350-2023223-Desain-12-minCetak-min-1.png-1-scaled-1.webp' alt="Koleksi fashion terbaru" className="h-full w-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10"></div>
+                    <section className="relative overflow-hidden bg-gradient-to-br from-[#D4AF37] via-[#C5A032] to-[#B8962E]">
+                        <div className="absolute -inset-x-40 -inset-y-40 opacity-30">
+                            <div className="h-full w-full animate-pulse" style={{
+                                background: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 70% 20%, rgba(255,255,255,0.2) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(255,255,255,0.15) 0%, transparent 45%)'
+                            }}></div>
                         </div>
 
-                        <div className="relative mx-auto grid min-h-[500px] max-w-7xl content-end px-4 pb-10 pt-24 sm:px-6 md:min-h-[620px] lg:px-8">
-                            <div className="max-w-2xl text-white">
-                                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/75 sm:text-sm">
-                                    Koleksi Fashion Harian
-                                </p>
-                                <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                                    Outfit nyaman untuk setiap gaya.
-                                </h1>
-                                <p className="mt-4 max-w-xl text-base leading-7 text-white/80 sm:text-lg">
-                                    Temukan baju pilihan dengan ukuran lengkap, harga bersahabat, dan tampilan yang siap dipakai sehari-hari.
-                                </p>
-                                <div className="mt-6 flex flex-wrap gap-3">
-                                    <a href="#produk" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-gray-950 shadow-xl shadow-black/20 hover:bg-gray-100">
-                                        Belanja Sekarang
-                                    </a>
-                                    <a href="#kategori" className="rounded-full border border-white/40 px-5 py-3 text-sm font-bold text-white hover:bg-white/10">
-                                        Lihat Kategori
-                                    </a>
+                        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+                            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+                                <div className="text-center lg:text-left">
+                                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm sm:text-sm">
+                                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
+                                        Koleksi Fashion Terbaru
+                                    </div>
+
+                                    <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
+                                        Tampil Gaya
+                                        <br />
+                                        <span className="relative">
+                                            Setiap Hari
+                                            <svg className="absolute -bottom-1 left-0 hidden w-full sm:block" viewBox="0 0 200 10" fill="none">
+                                                <path d="M1 6C50 1 150 1 199 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.5" />
+                                            </svg>
+                                        </span>
+                                    </h1>
+
+                                    <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg lg:mx-0">
+                                        Temukan koleksi baju pilihan dengan bahan premium, ukuran lengkap, dan harga bersahabat. Fashion nyaman untuk aktivitas harianmu.
+                                    </p>
+
+                                    <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+                                        <a href="#produk" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-gray-950 shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:bg-gray-100 hover:shadow-2xl">
+                                            Belanja Sekarang
+                                            <i className="fas fa-arrow-right text-xs"></i>
+                                        </a>
+                                        <a href="#kategori" className="inline-flex items-center gap-2 rounded-full border-2 border-white/30 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/10">
+                                            <i className="fas fa-grid-2 text-xs"></i>
+                                            Lihat Kategori
+                                        </a>
+                                    </div>
+
+                                    <div className="mt-10 flex flex-wrap justify-center gap-6 border-t border-white/15 pt-8 sm:gap-10 lg:justify-start">
+                                        <div className="text-center lg:text-left">
+                                            <p className="text-2xl font-black text-white">{produk.length}+</p>
+                                            <p className="text-xs font-medium text-white/60">Produk Fashion</p>
+                                        </div>
+                                        <div className="text-center lg:text-left">
+                                            <p className="text-2xl font-black text-white">100%</p>
+                                            <p className="text-xs font-medium text-white/60">Bahan Original</p>
+                                        </div>
+                                        <div className="text-center lg:text-left">
+                                            <p className="text-2xl font-black text-white">24 Jam</p>
+                                            <p className="text-xs font-medium text-white/60">Pengiriman</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative hidden lg:block">
+                                    <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl shadow-black/30">
+                                        <img
+                                            src={featuredImage}
+                                            alt="Featured product"
+                                            className="h-full w-full object-cover transition duration-700 hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
+                                        <div className="absolute bottom-0 left-0 right-0 p-5">
+                                            <p className="text-sm font-bold text-white/80">Produk Pilihan</p>
+                                            {featuredProduct && (
+                                                <p className="text-lg font-black text-white">{featuredProduct.nama_produk}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="absolute -left-6 top-10 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+                                        <p className="whitespace-nowrap text-xs font-semibold text-gray-500">Mulai dari</p>
+                                        <p className="text-lg font-black text-[#D4AF37]">Rp 50.000</p>
+                                    </div>
+
+                                    <div className="absolute -right-4 bottom-20 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="flex">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <i key={star} className="fas fa-star text-[10px] text-amber-400"></i>
+                                                ))}
+                                            </div>
+                                            <span className="text-sm font-black text-gray-950">4.9</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Rating Produk</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -328,7 +404,7 @@ export default function Toko({ produk, kategori }) {
                             <button
                                 type="button"
                                 onClick={() => setSelectedCategory('semua')}
-                                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${selectedCategory === 'semua' ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
+                                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${selectedCategory === 'semua' ? 'border-gray-950 bg-[#D4AF37] text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
                             >
                                 Semua
                             </button>
@@ -337,7 +413,7 @@ export default function Toko({ produk, kategori }) {
                                     key={item.id}
                                     type="button"
                                     onClick={() => setSelectedCategory(item.id)}
-                                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${String(selectedCategory) === String(item.id) ? 'border-gray-950 bg-gray-950 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
+                                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition ${String(selectedCategory) === String(item.id) ? 'border-gray-950 bg-[#D4AF37] text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'}`}
                                 >
                                     {item.kategori}
                                 </button>
@@ -354,60 +430,88 @@ export default function Toko({ produk, kategori }) {
                         </div>
 
                         {filteredProduk.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
-                                {filteredProduk.map((item) => (
-                                    <article key={item.id} className={`group overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-950/10 ${Number(item.stok) < 1 ? 'opacity-60' : ''}`}>
-                                        <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
-                                            <Link href={`/produk/${item.slug}`}>
-                                                <img
-                                                    src={getProductImage(item)}
-                                                    alt={item.nama_produk}
-                                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                                />
-                                            </Link>
-                                            {Number(item.stok) < 1 && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                    <span className="rounded-full bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg">
-                                                        Stok Habis
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {Number(item.diskon) > 0 && Number(item.stok) > 0 && (
-                                                <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
-                                                    -{item.diskon}%
-                                                </span>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => router.visit(`/produk/${item.slug}`)}
-                                                disabled={Number(item.stok) < 1}
-                                                className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-full bg-white text-gray-950 shadow-lg shadow-black/10 transition hover:bg-gray-950 hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-                                            >
-                                                <i className="fas fa-cart-shopping"></i>
-                                            </button>
-                                        </div>
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                                {filteredProduk.map((item) => {
+                                    const diskonHarga = Number(item.diskon) > 0
+                                        ? Number(item.harga) - (Number(item.harga) * Number(item.diskon) / 100)
+                                        : Number(item.harga)
+                                    return (
+                                        <article key={item.id} className={`group relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${Number(item.stok) < 1 ? 'opacity-60' : ''}`}>
+                                            <div className="relative aspect-square overflow-hidden bg-gray-100">
+                                                <Link href={`/produk/${item.slug}`}>
+                                                    <img
+                                                        src={getProductImage(item)}
+                                                        alt={item.nama_produk}
+                                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                                    />
+                                                </Link>
 
-                                        <div className="p-3 sm:p-4">
-                                            <p className="mb-1 truncate text-xs font-semibold uppercase text-gray-500">
-                                                {item.kategoriproduk?.kategori || 'Fashion'}
-                                            </p>
-                                            <Link href={`/produk/${item.slug}`} className="line-clamp-2 min-h-[40px] text-sm font-bold leading-5 hover:underline sm:text-base">
-                                                {item.nama_produk}
-                                            </Link>
-                                            <div className="mt-3 flex items-center justify-between gap-2">
-                                                <div>
-                                                    <p className="text-base font-black text-gray-950 sm:text-lg">
-                                                        {formatRupiah(item.harga)}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">Ukuran {item.ukuran?.replaceAll(',', ', ')}</p>
-                                                </div>
-                                                <span className={`rounded-full px-2 py-1 text-xs font-bold ${Number(item.stok) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                                    Stok {item.stok}
-                                                </span>
+                                                {Number(item.stok) < 1 && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                                        <span className="rounded bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow">
+                                                            Stok Habis
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {Number(item.diskon) > 0 && Number(item.stok) > 0 && (
+                                                    <span className="absolute left-0 top-0 rounded-br-lg bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-sm">
+                                                        -{item.diskon}%
+                                                    </span>
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.visit(`/produk/${item.slug}`)}
+                                                    disabled={Number(item.stok) < 1}
+                                                    className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow-md opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-[#D4AF37] hover:text-white disabled:cursor-not-allowed disabled:opacity-0"
+                                                >
+                                                    <i className="fas fa-shopping-cart text-sm"></i>
+                                                </button>
                                             </div>
-                                        </div>
-                                    </article>
-                                ))}
+
+                                            <div className="p-3">
+                                                <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                                                    {item.kategoriproduk?.kategori || 'Fashion'}
+                                                </p>
+
+                                                <Link href={`/produk/${item.slug}`} className="line-clamp-2 min-h-[36px] text-sm font-semibold leading-snug text-gray-800 hover:text-gray-950 hover:underline">
+                                                    {item.nama_produk}
+                                                </Link>
+
+                                                <div className="mt-2">
+                                                    {Number(item.diskon) > 0 ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="text-base font-bold text-red-600">
+                                                                {formatRupiah(diskonHarga)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-400 line-through">
+                                                                {formatRupiah(item.harga)}
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-base font-bold text-gray-950">
+                                                            {formatRupiah(item.harga)}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="mt-2 flex items-center gap-3 text-[11px] text-gray-500">
+                                                    <span className="flex items-center gap-1">
+                                                        <i className="fas fa-store text-[10px]"></i>
+                                                        {item.ukuran?.split(',').map((s) => s.trim()).join(', ') || 'Jakarta'}
+                                                    </span>
+                                                    {Number(item.stok) > 0 && (
+                                                        <span className="flex items-center gap-1">
+                                                            <i className="fas fa-box text-[10px]"></i>
+                                                            Stok {item.stok}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </article>
+                                    )
+                                })}
                             </div>
                         ) : (
                             <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-12 text-center">
@@ -512,7 +616,7 @@ export default function Toko({ produk, kategori }) {
                                     type="button"
                                     disabled={cart.length === 0}
                                     onClick={() => router.visit('/checkout')}
-                                    className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="w-full rounded-lg bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     Checkout
                                 </button>
@@ -567,7 +671,7 @@ export default function Toko({ produk, kategori }) {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="w-full rounded-lg bg-gray-950 px-4 py-3 text-sm font-bold text-white hover:bg-gray-800">
+                                <button type="submit" className="w-full rounded-lg bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white hover:bg-[#C5A032]">
                                     Buat Pesanan
                                 </button>
                             </form>

@@ -39,6 +39,17 @@ export default function AdminLayout({ children }) {
     return (
         <>
             <Head title='Admin'></Head>
+            <style>{`
+                .btn-primary {
+                    background-color: #D4AF37 !important;
+                    border-color: #D4AF37 !important;
+                    color: #fff !important;
+                }
+                .btn-primary:hover {
+                    background-color: #C5A032 !important;
+                    border-color: #C5A032 !important;
+                }
+            `}</style>
 
             <div data-theme={theme} className="flex min-h-screen bg-gradient-to-br from-base-200 to-base-300">
 

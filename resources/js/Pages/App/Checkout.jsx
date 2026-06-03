@@ -306,16 +306,20 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
         <>
             <Head title="Checkout" />
 
-            <div className="min-h-screen bg-gray-50 text-gray-950">
-                <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-bold">
-                            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-950/20">
-                                <i className="fas fa-shirt"></i>
+            <div className="min-h-screen bg-[#F5F2EB] text-gray-950">
+                <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-white/95 shadow-sm backdrop-blur-xl">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+                        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8962E] text-white shadow-lg shadow-[#D4AF37]/20">
+                                <i className="fas fa-shirt text-sm"></i>
                             </span>
-                            <span className="truncate">FEBRINOX</span>
+                            <div className="hidden sm:block">
+                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
+                            </div>
                         </Link>
-                        <Link href="/" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-gray-100">
+                        <Link href="/" className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50">
+                            <i className="fas fa-arrow-left text-xs"></i>
                             Lanjut Belanja
                         </Link>
                     </div>
@@ -328,7 +332,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                         <span>Checkout</span>
                     </div>
 
-                    <section className="mb-6 rounded-3xl bg-gray-950 p-5 text-white shadow-xl shadow-gray-950/10 sm:p-7">
+                    <section className="mb-6 rounded-3xl bg-[#D4AF37] p-5 text-white shadow-xl shadow-gray-950/10 sm:p-7">
                         <p className="text-sm font-semibold text-white/60">Pembayaran dan pengiriman</p>
                         <h1 className="mt-2 text-3xl font-black">Checkout pesanan</h1>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
@@ -417,7 +421,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                         type="button"
                                                         onMouseDown={(e) => e.preventDefault()}
                                                         onClick={() => chooseDestination(destination)}
-                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-gray-50 ${selectedDestination?.id === destination.id ? 'bg-gray-950 text-white hover:bg-gray-950' : 'text-gray-800'}`}
+                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-gray-50 ${selectedDestination?.id === destination.id ? 'bg-[#D4AF37] text-white hover:bg-[#D4AF37]' : 'text-gray-800'}`}
                                                     >
                                                         <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg ${selectedDestination?.id === destination.id ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                                             <i className="fas fa-location-dot text-xs"></i>
@@ -460,7 +464,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                     key={`${option.code}-${option.service}`}
                                                     type="button"
                                                     onClick={() => setSelectedShipping(option)}
-                                                    className={`group rounded-2xl border p-4 text-left transition ${active ? 'border-gray-950 bg-gray-950 text-white shadow-lg shadow-gray-950/20' : 'border-gray-200 bg-white hover:-translate-y-0.5 hover:border-gray-950 hover:shadow-lg hover:shadow-gray-950/10'}`}
+                                                    className={`group rounded-2xl border p-4 text-left transition ${active ? 'border-gray-950 bg-[#D4AF37] text-white shadow-lg shadow-gray-950/20' : 'border-gray-200 bg-white hover:-translate-y-0.5 hover:border-gray-950 hover:shadow-lg hover:shadow-gray-950/10'}`}
                                                 >
                                                     <div className="flex items-start gap-3">
                                                         <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg border text-xs font-black uppercase ${active ? 'border-white/20 bg-white text-gray-950' : courier.className}`}>
@@ -521,7 +525,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                 </div>
 
                                                 {sablon?.position ? (
-                                                    <div className="mt-2 flex items-center justify-between rounded-xl bg-gray-950/5 px-3 py-2">
+                                                    <div className="mt-2 flex items-center justify-between rounded-xl bg-[#D4AF37]/5 px-3 py-2">
                                                         <div className="flex items-center gap-2 text-xs font-semibold">
                                                             <i className="fas fa-palette text-gray-950"></i>
                                                             <span>Sablon {getPositionName(sablon.position)}</span>
@@ -557,7 +561,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                                             selectSablonPosition(item.id, sp.position)
                                                                             if (!sablon?.position) setExpandedSablon((prev) => ({ ...prev, [item.id]: true }))
                                                                         }}
-                                                                        className="rounded-lg border px-2 py-1.5 text-left text-xs transition hover:border-gray-950 data-[active=true]:border-gray-950 data-[active=true]:bg-gray-950 data-[active=true]:text-white"
+                                                                        className="rounded-lg border px-2 py-1.5 text-left text-xs transition hover:border-gray-950 data-[active=true]:border-gray-950 data-[active=true]:bg-[#D4AF37] data-[active=true]:text-white"
                                                                         data-active={sablon?.position === sp.position}
                                                                     >
                                                                         <p className="font-semibold">{sp.label}</p>
@@ -706,7 +710,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                 <button
                                     type="submit"
                                     disabled={processing || cartItems.length === 0}
-                                    className="mt-5 w-full rounded-full bg-gray-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-gray-950/20 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="mt-5 w-full rounded-full bg-[#D4AF37] px-4 py-3 text-sm font-black text-white shadow-lg shadow-gray-950/20 hover:bg-[#C5A032] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     {processing ? 'Memproses...' : checkoutConfig?.midtransReady ? 'Bayar Sekarang' : 'Buat Order'}
                                 </button>

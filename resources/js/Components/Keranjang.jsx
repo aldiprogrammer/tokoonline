@@ -7,7 +7,7 @@ export default function Keranjang() {
             <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="relative grid h-10 w-10 place-items-center rounded-lg bg-gray-950 text-white hover:bg-gray-800"
+                className="relative grid h-10 w-10 place-items-center rounded-lg bg-[#D4AF37] text-white hover:bg-[#C5A032]"
             >
                 <i className="fas fa-bag-shopping"></i>
                 <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs">
