@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout'
 import { Link, useForm } from '@inertiajs/react'
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import Swal from 'sweetalert2'
 
 export default function Produk({ produk, kategori }) {
@@ -19,6 +19,39 @@ export default function Produk({ produk, kategori }) {
         image_samping: null,
         image_belakang: null,
     })
+
+    const [search, setSearch] = useState('')
+    const [page, setPage] = useState(1)
+    const [perPage, setPerPage] = useState(10)
+
+    const filtered = useMemo(() => {
+        if (!search.trim()) return produk
+        const q = search.toLowerCase()
+        return produk.filter((item) =>
+            item.nama_produk?.toLowerCase().includes(q) ||
+            item.kode_produk?.toLowerCase().includes(q) ||
+            item?.kategoriproduk?.kategori?.toLowerCase().includes(q)
+        )
+    }, [produk, search])
+
+    const totalPages = Math.ceil(filtered.length / perPage)
+    const start = (page - 1) * perPage
+    const end = start + perPage
+    const paginated = filtered.slice(start, end)
+
+    const pageNumbers = () => {
+        const pages = []
+        const maxVisible = 5
+        let startPage = Math.max(1, page - Math.floor(maxVisible / 2))
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1)
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1)
+        }
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i)
+        }
+        return pages
+    }
 
     const getImageByPosisi = (item, posisi) => {
         const found = item.gambarproduk?.find((g) => g.posisi === posisi)
@@ -196,6 +229,36 @@ export default function Produk({ produk, kategori }) {
                         </div>
                     </dialog>
 
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2 text-sm">
+                            <span>Tampilkan</span>
+                            <select
+                                className="select select-bordered select-sm w-20 text-xs"
+                                value={perPage}
+                                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                            </select>
+                            <span>data</span>
+                        </div>
+                        <div className="join">
+                            <span className="join-item bg-base-200 border border-base-300 border-r-0 px-3 flex items-center text-base-content/50">
+                                <i className="fas fa-search text-xs"></i>
+                            </span>
+                            <input
+                                type="text"
+                                className="join-item input input-bordered input-sm w-56"
+                                placeholder="Cari produk..."
+                                value={search}
+                                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            />
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="table">
                             <thead>
@@ -214,14 +277,14 @@ export default function Produk({ produk, kategori }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {produk.map((item, index) => {
+                                {paginated.length > 0 ? (paginated.map((item, index) => {
                                     const depan = getImageByPosisi(item, 'depan')
                                     return (
                                         <tr key={item.id} className="hover">
-                                            <td className="font-medium">{index + 1}</td>
+                                            <td className="font-medium">{start + index + 1}</td>
                                             <td>{item.kode_produk}</td>
                                             <td>{item.nama_produk}</td>
-                                            <td>{item.kategoriproduk.kategori}</td>
+                                            <td>{item?.kategoriproduk?.kategori || ''}</td>
                                             <td>
                                                 <div className="flex flex-wrap gap-1">
                                                     {item.ukuran?.split(',').map((ukuran) => (
@@ -252,9 +315,47 @@ export default function Produk({ produk, kategori }) {
                                             </td>
                                         </tr>
                                     )
-                                })}
+                                })) : (
+                                    <tr>
+                                        <td colSpan={11} className="text-center py-8 text-base-content/50">
+                                            <i className="fas fa-inbox text-3xl block mb-2"></i>
+                                            Tidak ada data ditemukan
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 text-sm">
+                        <div className="text-base-content/60">
+                            Menampilkan {filtered.length > 0 ? start + 1 : 0} - {Math.min(end, filtered.length)} dari {filtered.length} data
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button
+                                className="btn btn-sm btn-ghost"
+                                disabled={page <= 1}
+                                onClick={() => setPage(page - 1)}
+                            >
+                                <i className="fas fa-chevron-left"></i>
+                            </button>
+                            {pageNumbers().map((p) => (
+                                <button
+                                    key={p}
+                                    className={`btn btn-sm ${p === page ? 'btn-primary' : 'btn-ghost'}`}
+                                    onClick={() => setPage(p)}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                            <button
+                                className="btn btn-sm btn-ghost"
+                                disabled={page >= totalPages}
+                                onClick={() => setPage(page + 1)}
+                            >
+                                <i className="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </AdminLayout>
