@@ -212,7 +212,7 @@ export default function Toko({ produk, kategori }) {
                                 <i className="fas fa-shirt text-sm"></i>
                             </span>
                             <div className="hidden sm:block">
-                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <span className="text-base font-black tracking-tight text-gray-950">FABRICO</span>
                                 <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
                             </div>
                         </Link>
@@ -525,7 +525,7 @@ export default function Toko({ produk, kategori }) {
 
                 <footer className="border-t border-gray-200 bg-white">
                     <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                        <p className="font-semibold text-gray-950">Febrinox</p>
+                        <p className="font-semibold text-gray-950">Fabrico</p>
                         <p>Belanja baju nyaman, cepat, dan terpercaya.</p>
                     </div>
                 </footer>

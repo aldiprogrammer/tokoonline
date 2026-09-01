@@ -35,7 +35,7 @@ export default function Register() {
                             <span className="grid h-10 w-10 place-items-center rounded-lg bg-gray-950 text-white">
                                 <i className="fas fa-shirt"></i>
                             </span>
-                            FEBRINOX
+                            FABRICO
                         </Link>
 
                         <div className="mb-6">

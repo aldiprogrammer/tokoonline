@@ -1,9 +1,10 @@
 import AdminLayout from '@/Layouts/AdminLayout'
-import React from 'react'
+import React, { useState } from 'react'
 import { useForm } from '@inertiajs/react'
 
 export default function Tambahproduk({ kode, kategori }) {
     const ukuranOptions = ['S', 'M', 'L', 'XL', 'XXL']
+    const [ukuranLukisan, setUkuranLukisan] = useState({ lebar: '', tinggi: '' })
 
     const { data, setData, post, reset, processing, errors } = useForm({
         kode: kode,
@@ -19,7 +20,16 @@ export default function Tambahproduk({ kode, kategori }) {
         image_belakang: null,
     })
 
+    const selectedKategori = kategori.find((item) => item.id == data.kategori_id)
+    const isLukisan = selectedKategori?.kategori?.toLowerCase() === 'lukisan'
+
     const handleChange = (e) => {
+        if (e.target.name === 'kategori_id') {
+            setData('kategori_id', e.target.value)
+            setData('ukuran', [])
+            setUkuranLukisan({ lebar: '', tinggi: '' })
+            return
+        }
         setData(e.target.name, e.target.value)
     }
 
@@ -29,6 +39,16 @@ export default function Tambahproduk({ kode, kategori }) {
             return
         }
         setData('ukuran', [...data.ukuran, ukuran])
+    }
+
+    const handleUkuranLukisan = (field, value) => {
+        const next = { ...ukuranLukisan, [field]: value }
+        setUkuranLukisan(next)
+        if (next.lebar && next.tinggi) {
+            setData('ukuran', [`${next.lebar} x ${next.tinggi}`])
+        } else {
+            setData('ukuran', [])
+        }
     }
 
     const handleImageChange = (field, e) => {
@@ -104,15 +124,28 @@ export default function Tambahproduk({ kode, kategori }) {
                                 </select>
 
                                 <div className="col-span-2 mb-3">
-                                    <p className="font-semibold mb-2">Ukuran Baju</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {ukuranOptions.map((ukuran) => (
-                                            <label key={ukuran} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${data.ukuran.includes(ukuran) ? 'border-primary bg-primary text-white' : 'border-base-300 bg-base-100'}`}>
-                                                <input type="checkbox" className="hidden" checked={data.ukuran.includes(ukuran)} onChange={() => handleUkuranChange(ukuran)} />
-                                                {ukuran}
-                                            </label>
-                                        ))}
-                                    </div>
+                                    {isLukisan ? (
+                                        <>
+                                            <p className="font-semibold mb-2">Ukuran Lukisan (cm)</p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input type="number" min="0" placeholder="Lebar (cm)" className="input input-bordered" value={ukuranLukisan.lebar} onChange={(e) => handleUkuranLukisan('lebar', e.target.value)} required />
+                                                <input type="number" min="0" placeholder="Tinggi (cm)" className="input input-bordered" value={ukuranLukisan.tinggi} onChange={(e) => handleUkuranLukisan('tinggi', e.target.value)} required />
+                                            </div>
+                                            <p className="text-xs text-base-content/60 mt-1">Contoh: Lebar 30 cm x Tinggi 40 cm</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="font-semibold mb-2">Ukuran Baju</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {ukuranOptions.map((ukuran) => (
+                                                    <label key={ukuran} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${data.ukuran.includes(ukuran) ? 'border-primary bg-primary text-white' : 'border-base-300 bg-base-100'}`}>
+                                                        <input type="checkbox" className="hidden" checked={data.ukuran.includes(ukuran)} onChange={() => handleUkuranChange(ukuran)} />
+                                                        {ukuran}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 <input type="number" name="harga" onChange={handleChange} className='input input-bordered mb-3' placeholder='Harga Produk' value={data.harga} required />

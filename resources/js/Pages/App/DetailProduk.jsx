@@ -181,7 +181,7 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
                                 <i className="fas fa-shirt text-sm"></i>
                             </span>
                             <div className="hidden sm:block">
-                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <span className="text-base font-black tracking-tight text-gray-950">FABRICO</span>
                                 <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
                             </div>
                         </Link>

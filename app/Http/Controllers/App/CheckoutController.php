@@ -366,7 +366,7 @@ class CheckoutController extends Controller
 
     private function cartItems(int $userId)
     {
-        return Keranjang::with('produk.gambarproduk')
+        return Keranjang::with('produk.gambarproduk', 'produk.kategoriproduk')
             ->where('id_user', $userId)
             ->latest()
             ->get();
@@ -387,6 +387,7 @@ class CheckoutController extends Controller
                 'id' => $item->id,
                 'product_id' => $item->id_produk,
                 'nama_produk' => $item->produk?->nama_produk,
+                'kategori' => $item->produk?->kategoriproduk?->kategori,
                 'harga' => (int) $item->harga,
                 'harga_asli' => (int) ($item->produk?->harga ?? $item->harga),
                 'diskon' => (int) ($item->produk?->diskon ?? 0),

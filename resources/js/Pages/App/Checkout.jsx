@@ -314,7 +314,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                 <i className="fas fa-shirt text-sm"></i>
                             </span>
                             <div className="hidden sm:block">
-                                <span className="text-base font-black tracking-tight text-gray-950">FEBRINOX</span>
+                                <span className="text-base font-black tracking-tight text-gray-950">FABRICO</span>
                                 <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">Fashion Store</p>
                             </div>
                         </Link>
@@ -505,6 +505,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                         const sablon = sablonData[item.id]
                                         const hasImage = sablon?.image || sablon?.preview
                                         const isOpen = expandedSablon[item.id]
+                                        const isLukisan = item.kategori?.toLowerCase() === 'lukisan'
                                         return (
                                             <div key={item.id} className="rounded-2xl border border-gray-100 p-3">
                                                 <div className="flex gap-3">
@@ -524,7 +525,7 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                     </div>
                                                 </div>
 
-                                                {sablon?.position ? (
+                                                {!isLukisan && (sablon?.position ? (
                                                     <div className="mt-2 flex items-center justify-between rounded-xl bg-[#D4AF37]/5 px-3 py-2">
                                                         <div className="flex items-center gap-2 text-xs font-semibold">
                                                             <i className="fas fa-palette text-gray-950"></i>
@@ -546,9 +547,9 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                                                         <i className="fas fa-plus"></i>
                                                         Tambah Sablon
                                                     </button>
-                                                )}
+                                                ))}
 
-                                                {isOpen && (
+                                                {!isLukisan && isOpen && (
                                                     <div className="mt-3 space-y-3">
                                                         <div>
                                                             <p className="mb-1.5 text-xs font-bold text-gray-700">Pilih posisi</p>

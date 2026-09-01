@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Gambarprodk;
 use App\Models\Kategori;
 use App\Models\Produk;
+use App\Services\WatermarkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -67,7 +68,7 @@ class ProdukCotroller extends Controller
 
         foreach ($positions as $field => $posisi) {
             if ($request->hasFile($field)) {
-                $path = $request->file($field)->store('produk', 'public');
+                $path = WatermarkService::apply($request->file($field), 'public', 'produk');
 
                 $img = new Gambarprodk();
                 $img->id_produk = $pr->id;
@@ -124,7 +125,7 @@ class ProdukCotroller extends Controller
                     $existing->delete();
                 }
 
-                $path = $request->file($field)->store('produk', 'public');
+                $path = WatermarkService::apply($request->file($field), 'public', 'produk');
 
                 $img = new Gambarprodk();
                 $img->id_produk = $pr->id;
