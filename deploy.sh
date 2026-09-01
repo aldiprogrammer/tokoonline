@@ -1,41 +1,165 @@
 #!/bin/bash
+
 set -e
+
+# =========================================================
+# KONFIGURASI
+# =========================================================
 
 APP_DIR="/home/u107214145/domains/fabricoasia.com/tokoonline"
 WEB_DIR="/home/u107214145/domains/fabricoasia.com/public_html"
 BRANCH="main"
 
+# =========================================================
+# MASUK KE FOLDER PROJECT
+# =========================================================
+
+echo ""
+echo "=========================================="
+echo "       DEPLOY LARAVEL"
+echo "=========================================="
+echo ""
+
 cd "$APP_DIR"
 
-echo "==> Update dari Git"
+echo "==> Folder project:"
+pwd
+
+# =========================================================
+# UPDATE CODE DARI GITHUB
+# =========================================================
+
+echo ""
+echo "==> Update dari GitHub..."
+
 git fetch origin
 git reset --hard "origin/$BRANCH"
 
-echo "==> Install dependency PHP"
-composer install --no-dev --optimize-autoloader --no-interaction
+# =========================================================
+# INSTALL DEPENDENCY PHP
+# =========================================================
 
-echo "==> Clear cache Laravel"
+echo ""
+echo "==> Install dependency PHP..."
+
+composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction
+
+# =========================================================
+# CLEAR CACHE LARAVEL
+# =========================================================
+
+echo ""
+echo "==> Clear cache Laravel..."
+
 php artisan optimize:clear
 
-echo "==> Cache Laravel"
+# =========================================================
+# CACHE LARAVEL
+# =========================================================
+
+echo ""
+echo "==> Cache config Laravel..."
+
 php artisan config:cache
-# php artisan route:cache
+
+echo ""
+echo "==> Cache view Laravel..."
+
 php artisan view:cache
 
+# =========================================================
+# BUILD VITE / REACT
+# =========================================================
+
 if command -v npm >/dev/null 2>&1; then
-  echo "==> Build Vite"
-  npm ci
-  npm run build
+
+    echo ""
+    echo "==> Node.js ditemukan:"
+    node -v
+
+    echo ""
+    echo "==> NPM ditemukan:"
+    npm -v
+
+    echo ""
+    echo "==> Install dependency NPM..."
+
+    npm ci
+
+    echo ""
+    echo "==> Build Vite..."
+
+    npm run build
+
 else
-  echo "==> npm tidak tersedia, skip build"
+
+    echo ""
+    echo "WARNING: npm tidak tersedia."
+    echo "Build Vite dilewati."
+
 fi
 
-echo "==> Sync public ke public_html"
-rsync -av --delete \
-  --exclude='index.php' \
-  "$APP_DIR/public/" "$WEB_DIR/"
+# =========================================================
+# PASTIKAN STORAGE DIRECTORY ADA
+# =========================================================
 
-echo "==> Pastikan index.php custom tetap aman"
+echo ""
+echo "==> Memastikan storage Laravel..."
+
+mkdir -p "$APP_DIR/storage/app/public"
+
+# =========================================================
+# SYNC PUBLIC LARAVEL KE PUBLIC_HTML
+# =========================================================
+
+echo ""
+echo "==> Sync public Laravel ke public_html..."
+
+rsync -av --delete \
+    --exclude='index.php' \
+    --exclude='storage' \
+    "$APP_DIR/public/" \
+    "$WEB_DIR/"
+
+# =========================================================
+# BUAT STORAGE LINK
+# =========================================================
+
+echo ""
+echo "==> Membuat symbolic link storage..."
+
+# Hapus storage lama jika ada
+if [ -L "$WEB_DIR/storage" ]; then
+
+    echo "==> Menghapus symbolic link storage lama..."
+
+    rm "$WEB_DIR/storage"
+
+elif [ -d "$WEB_DIR/storage" ]; then
+
+    echo "==> Menghapus folder storage lama..."
+
+    rm -rf "$WEB_DIR/storage"
+
+fi
+
+# Buat symbolic link baru
+ln -s \
+    "$APP_DIR/storage/app/public" \
+    "$WEB_DIR/storage"
+
+echo "==> Storage link berhasil dibuat."
+
+# =========================================================
+# BUAT INDEX.PHP
+# =========================================================
+
+echo ""
+echo "==> Membuat index.php..."
+
 cat > "$WEB_DIR/index.php" <<'PHP'
 <?php
 
@@ -44,6 +168,7 @@ use Illuminate\Http\Request;
 define('LARAVEL_START', microtime(true));
 
 require __DIR__.'/../tokoonline/vendor/autoload.php';
+
 $app = require_once __DIR__.'/../tokoonline/bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
@@ -55,4 +180,72 @@ $response = $kernel->handle(
 $kernel->terminate($request, $response);
 PHP
 
-echo "==> Selesai"
+# =========================================================
+# PERMISSION
+# =========================================================
+
+echo ""
+echo "==> Mengatur permission storage..."
+
+chmod -R 775 "$APP_DIR/storage"
+chmod -R 775 "$APP_DIR/bootstrap/cache"
+
+# =========================================================
+# CEK STORAGE LINK
+# =========================================================
+
+echo ""
+echo "==> Mengecek storage link..."
+
+if [ -L "$WEB_DIR/storage" ]; then
+
+    echo "SUCCESS: storage link aktif."
+
+    ls -la "$WEB_DIR/storage"
+
+else
+
+    echo "ERROR: storage link gagal dibuat."
+
+    exit 1
+
+fi
+
+# =========================================================
+# CEK INDEX.PHP
+# =========================================================
+
+if [ -f "$WEB_DIR/index.php" ]; then
+
+    echo ""
+    echo "SUCCESS: index.php tersedia."
+
+else
+
+    echo ""
+    echo "ERROR: index.php tidak ditemukan."
+
+    exit 1
+
+fi
+
+# =========================================================
+# SELESAI
+# =========================================================
+
+echo ""
+echo "=========================================="
+echo "       DEPLOY BERHASIL"
+echo "=========================================="
+echo ""
+
+echo "Project : $APP_DIR"
+echo "Website : $WEB_DIR"
+echo "Branch  : $BRANCH"
+
+echo ""
+echo "Storage:"
+echo "$WEB_DIR/storage -> $APP_DIR/storage/app/public"
+
+echo ""
+echo "=========================================="
