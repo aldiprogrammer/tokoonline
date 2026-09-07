@@ -15,6 +15,11 @@ class Profil extends Model
 
     public function alamat()
     {
-        return $this->hasOne(Alamat::class, 'id_profil');
+        return $this->hasMany(Alamat::class, 'id_profil');
+    }
+
+    public function alamatUtama()
+    {
+        return $this->hasOne(Alamat::class, 'id_profil')->where('alamat_utama', true);
     }
 }

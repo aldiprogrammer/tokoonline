@@ -29,7 +29,8 @@ class CheckoutController extends Controller
         return Inertia::render('App/Checkout', [
             'cartItems' => $this->cartPayload($cart),
             'profil' => Profil::where('id_user', $request->user()->id)->first(),
-            'alamat' => Alamat::where('id_user', $request->user()->id)->first(),
+            'alamat' => Alamat::where('id_user', $request->user()->id)->orderByDesc('alamat_utama')->first(),
+            'alamatList' => Alamat::where('id_user', $request->user()->id)->orderByDesc('alamat_utama')->get(),
             'sablonPrices' => SablonPrice::all()->map(fn ($s) => [
                 'position' => $s->position,
                 'label' => $s->label,

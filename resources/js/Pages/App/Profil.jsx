@@ -2,7 +2,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react'
 import React, { useEffect, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 
-export default function Profil({ profil, alamat, orders = [], profileConfig }) {
+export default function Profil({ profil, alamat, alamatList = [], orders = [], profileConfig }) {
     const { auth, flash, cart: initialCart } = usePage().props
     const [activeMenu, setActiveMenu] = useState('profil')
     const [cart, setCart] = useState(initialCart ?? [])
@@ -30,9 +30,22 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
         rajaongkir_destination_label: alamat?.rajaongkir_destination_label || '',
     })
 
+    const [alamats, setAlamats] = useState(alamatList)
+    const [alamatManagerOpen, setAlamatManagerOpen] = useState(false)
+    const [editingAlamat, setEditingAlamat] = useState(null)
+    const [alamatForm, setAlamatForm] = useState(null)
+    const [alamatErrors, setAlamatErrors] = useState({})
+    const [alamatDestOpen, setAlamatDestOpen] = useState(false)
+    const [alamatDestError, setAlamatDestError] = useState('')
+    const [alamatLoadingDest, setAlamatLoadingDest] = useState(false)
+
     useEffect(() => {
         setCart(initialCart ?? [])
     }, [initialCart])
+
+    useEffect(() => {
+        setAlamats(alamatList)
+    }, [alamatList])
 
     useEffect(() => {
         if (flash?.success || flash?.error) {
@@ -88,6 +101,102 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
         e.preventDefault()
         post('/profil', { preserveScroll: true })
     }
+
+    const openAlamatManager = (alamatItem = null) => {
+        if (alamatItem) {
+            setEditingAlamat(alamatItem)
+            setAlamatForm({
+                provinsi: alamatItem.provinsi || '',
+                kabupaten: alamatItem.kabupaten || '',
+                kecamatan: alamatItem.kecamatan || '',
+                kelurahan: alamatItem.kelurahan || '',
+                alamat: alamatItem.alamat || '',
+                kode_pos: alamatItem.kode_pos || '',
+                rajaongkir_destination_id: alamatItem.rajaongkir_destination_id || '',
+                rajaongkir_destination_label: alamatItem.rajaongkir_destination_label || '',
+            })
+        } else {
+            setEditingAlamat(null)
+            setAlamatForm({
+                provinsi: '',
+                kabupaten: '',
+                kecamatan: '',
+                kelurahan: '',
+                alamat: '',
+                kode_pos: '',
+                rajaongkir_destination_id: '',
+                rajaongkir_destination_label: '',
+            })
+        }
+        setAlamatManagerOpen(true)
+    }
+
+    const closeAlamatManager = () => {
+        setAlamatManagerOpen(false)
+        setEditingAlamat(null)
+        setAlamatForm(null)
+    }
+
+    const setAlamatField = (key, value) => {
+        setAlamatForm((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const submitAlamat = (e) => {
+        e.preventDefault()
+        if (!alamatForm) return
+
+        const payload = {
+            ...alamatForm,
+            alamat: alamatForm.alamat || '',
+        }
+
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => closeAlamatManager(),
+            onError: (errors) => setAlamatErrors(errors || {}),
+        }
+
+        setAlamatErrors({})
+
+        if (editingAlamat) {
+            router.put(`/alamat/${editingAlamat.id}`, payload, options)
+        } else {
+            router.post('/alamat', payload, options)
+        }
+    }
+
+    const setAlamatUtama = (alamatItem) => {
+        router.put(`/alamat/${alamatItem.id}/utama`, {}, { preserveScroll: true })
+    }
+
+    const hapusAlamat = (alamatItem) => {
+        Swal.fire({
+            title: 'Hapus alamat?',
+            text: `Alamat "${alamatItem.rajaongkir_destination_label || alamatItem.kabupaten}" akan dihapus.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Hapus',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#dc2626',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(`/alamat/${alamatItem.id}`, { preserveScroll: true })
+            }
+        })
+    }
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+
+        if (params.get('tab') === 'alamat') {
+            setActiveMenu('alamat')
+        }
+
+        if (params.get('tambah') === '1') {
+            window.setTimeout(() => openAlamatManager(), 0)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const requestJson = async (url) => {
         const response = await fetch(url, {
@@ -186,6 +295,54 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
             rajaongkir_destination_label: label,
         })
     }
+
+    const searchAlamatDestination = async (keyword) => {
+        if (!rajaReady) {
+            setAlamatDestError('API key RajaOngkir belum diatur.')
+            setAlamatDestOpen(true)
+            return
+        }
+
+        const searchKeyword = keyword.trim()
+
+        if (searchKeyword.length < 3) {
+            setDestinations([])
+            setAlamatDestOpen(false)
+            return
+        }
+
+        try {
+            setAlamatLoadingDest(true)
+            setAlamatDestError('')
+            const result = await requestJson(`/checkout/destinations?search=${encodeURIComponent(searchKeyword)}`)
+            setDestinations(result.data || [])
+            setAlamatDestOpen(true)
+        } catch (error) {
+            setDestinations([])
+            setAlamatDestOpen(true)
+            setAlamatDestError(error.message)
+        } finally {
+            setAlamatLoadingDest(false)
+        }
+    }
+
+    useEffect(() => {
+        if (!alamatManagerOpen || !alamatForm) return
+
+        const keyword = alamatForm.rajaongkir_destination_label || ''
+        if (!rajaReady || alamatForm.rajaongkir_destination_id || keyword.trim().length < 3) {
+            setDestinations([])
+            setAlamatDestOpen(false)
+            return
+        }
+
+        const timer = window.setTimeout(() => {
+            searchAlamatDestination(keyword)
+        }, 450)
+
+        return () => window.clearTimeout(timer)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [alamatManagerOpen, alamatForm?.rajaongkir_destination_label])
 
     const sendCartRequest = async (url, method, payload = null) => {
         const response = await fetch(url, {
@@ -344,6 +501,7 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
 
     const menuItems = [
         { key: 'profil', label: 'Data Diri', icon: 'fa-user' },
+        { key: 'alamat', label: 'Alamat Saya', icon: 'fa-location-dot' },
         { key: 'pengiriman', label: 'Proses Pengiriman', icon: 'fa-truck-fast' },
         { key: 'pembelian', label: 'Data Pembelian', icon: 'fa-bag-shopping' },
     ]
@@ -563,6 +721,191 @@ export default function Profil({ profil, alamat, orders = [], profileConfig }) {
                                         </div>
                                     </div>
                                 </form>
+                            )}
+
+                            {activeMenu === 'alamat' && (
+                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                                    <div className="mb-5 flex items-center justify-between gap-4">
+                                        <div>
+                                            <h2 className="text-xl font-black">Alamat Saya</h2>
+                                            <p className="mt-1 text-sm text-gray-500">Kelola beberapa alamat untuk pengiriman.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => openAlamatManager()}
+                                            className="flex items-center gap-2 rounded-full bg-[#D4AF37] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-gray-950/20 hover:bg-[#C5A032]"
+                                        >
+                                            <i className="fas fa-plus"></i>
+                                            Tambah Alamat
+                                        </button>
+                                    </div>
+
+                                    {alamats.length > 0 ? (
+                                        <div className="grid gap-3">
+                                            {alamats.map((item) => {
+                                                const full = [item.kelurahan, item.kecamatan, item.kabupaten, item.provinsi].filter(Boolean).join(', ')
+                                                return (
+                                                    <div key={item.id} className={`rounded-2xl border p-4 ${item.alamat_utama ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-gray-200 bg-white'}`}>
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    {item.alamat_utama && (
+                                                                        <span className="inline-flex items-center gap-1 rounded-full bg-[#D4AF37] px-2.5 py-0.5 text-[11px] font-bold text-white">
+                                                                            <i className="fas fa-star"></i>
+                                                                            Utama
+                                                                        </span>
+                                                                    )}
+                                                                    <p className="font-black">{item.rajaongkir_destination_label || full}</p>
+                                                                </div>
+                                                                <p className="mt-1 text-sm text-gray-600">{item.alamat}</p>
+                                                                <p className="mt-1 text-xs text-gray-500">{full} {item.kode_pos ? `· ${item.kode_pos}` : ''}</p>
+                                                            </div>
+                                                            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                                                                {!item.alamat_utama && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setAlamatUtama(item)}
+                                                                        className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+                                                                    >
+                                                                        Jadikan Utama
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openAlamatManager(item)}
+                                                                    className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+                                                                >
+                                                                    <i className="fas fa-pen mr-1"></i>
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => hapusAlamat(item)}
+                                                                    className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                                                                >
+                                                                    <i className="fas fa-trash-can mr-1"></i>
+                                                                    Hapus
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <EmptyState icon="fa-location-dot" title="Belum ada alamat" description="Tambahkan alamat penerima agar checkout lebih cepat." />
+                                    )}
+                                </div>
+                            )}
+
+                            {activeMenu === 'alamat' && alamatManagerOpen && alamatForm && (
+                                <div className="fixed inset-0 z-50">
+                                    <div
+                                        className="absolute inset-0 bg-black/50"
+                                        onMouseDown={(e) => {
+                                            if (e.target === e.currentTarget) closeAlamatManager()
+                                        }}
+                                    ></div>
+                                    <div className="pointer-events-none absolute inset-0 overflow-y-auto p-4">
+                                        <div className="pointer-events-auto mx-auto mt-8 w-full max-w-2xl rounded-3xl bg-white p-4 shadow-2xl sm:p-6">
+                                            <div className="mb-4 flex items-center justify-between">
+                                                <h3 className="text-lg font-black">{editingAlamat ? 'Edit Alamat' : 'Tambah Alamat Baru'}</h3>
+                                                <button type="button" onClick={closeAlamatManager} className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100">
+                                                    <i className="fas fa-xmark"></i>
+                                                </button>
+                                            </div>
+
+                                            <form onSubmit={submitAlamat} className="space-y-4">
+                                                <div className="relative">
+                                                    <label className="text-sm font-bold text-gray-700">Cari Alamat Anda</label>
+                                                    <div className="relative mt-2">
+                                                        <input
+                                                            type="text"
+                                                            value={alamatForm.rajaongkir_destination_label}
+                                                            onChange={(e) => {
+                                                                setAlamatField('rajaongkir_destination_label', e.target.value)
+                                                                setAlamatField('rajaongkir_destination_id', '')
+                                                            }}
+                                                            className="h-12 w-full rounded-2xl border border-gray-300 pl-11 pr-4 text-sm outline-none transition focus:border-gray-950"
+                                                            placeholder="Ketik kecamatan, kota, kelurahan, atau kode pos"
+                                                            autoComplete="off"
+                                                        />
+                                                        <i className="fas fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400"></i>
+                                                        {alamatLoadingDest && <i className="fas fa-circle-notch fa-spin absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400"></i>}
+                                                    </div>
+                                                    {alamatDestOpen && destinations.length > 0 && (
+                                                        <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white py-2 shadow-xl">
+                                                            {destinations.map((destination) => {
+                                                                const label = destination.label || ''
+                                                                const isSelected = label === alamatForm.rajaongkir_destination_label
+                                                                return (
+                                                                    <button
+                                                                        key={destination.id}
+                                                                        type="button"
+                                                                        onMouseDown={(e) => e.preventDefault()}
+                                                                        onClick={() => {
+                                                                            setAlamatForm((prev) => ({
+                                                                                ...prev,
+                                                                                provinsi: destination.province_name || prev.provinsi,
+                                                                                kabupaten: destination.city_name || prev.kabupaten,
+                                                                                kecamatan: destination.district_name || prev.kecamatan,
+                                                                                kelurahan: destination.subdistrict_name || prev.kelurahan,
+                                                                                kode_pos: destination.zip_code || prev.kode_pos,
+                                                                                rajaongkir_destination_id: String(destination.id || ''),
+                                                                                rajaongkir_destination_label: label,
+                                                                            }))
+                                                                            setAlamatDestOpen(false)
+                                                                            setDestinations([])
+                                                                            setAlamatDestError('')
+                                                                        }}
+                                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-gray-50 ${isSelected ? 'bg-gray-50' : ''}`}
+                                                                    >
+                                                                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gray-100 text-gray-600">
+                                                                            <i className="fas fa-location-dot text-xs"></i>
+                                                                        </span>
+                                                                        <span>
+                                                                            <span className="block font-black leading-5">{label}</span>
+                                                                            <span className="mt-1 block text-xs text-gray-500">{destination.zip_code || ''}</span>
+                                                                        </span>
+                                                                    </button>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid gap-4 md:grid-cols-2">
+                                                    <Input label="Provinsi" value={alamatForm.provinsi} error={alamatErrors.provinsi} onChange={(value) => setAlamatField('provinsi', value)} />
+                                                    <Input label="Kabupaten / Kota" value={alamatForm.kabupaten} error={alamatErrors.kabupaten} onChange={(value) => setAlamatField('kabupaten', value)} />
+                                                    <Input label="Kecamatan" value={alamatForm.kecamatan} error={alamatErrors.kecamatan} onChange={(value) => setAlamatField('kecamatan', value)} />
+                                                    <Input label="Kelurahan / Desa" value={alamatForm.kelurahan} error={alamatErrors.kelurahan} onChange={(value) => setAlamatField('kelurahan', value)} />
+                                                    <Input label="Kode pos" value={alamatForm.kode_pos} onChange={(value) => setAlamatField('kode_pos', value)} />
+                                                </div>
+
+                                                <div>
+                                                    <label className="text-sm font-bold text-gray-700">Alamat lengkap</label>
+                                                    <textarea
+                                                        value={alamatForm.alamat}
+                                                        onChange={(e) => setAlamatField('alamat', e.target.value)}
+                                                        className="mt-2 min-h-24 w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-950"
+                                                        placeholder="Nama jalan, nomor rumah, RT/RW, patokan"
+                                                        required
+                                                    ></textarea>
+                                                    {alamatErrors.alamat && <p className="mt-1 text-xs font-semibold text-red-600">{alamatErrors.alamat}</p>}
+                                                </div>
+
+                                                <div className="flex justify-end gap-2 pt-1">
+                                                    <button type="button" onClick={closeAlamatManager} className="rounded-full border border-gray-200 px-5 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50">
+                                                        Batal
+                                                    </button>
+                                                    <button type="submit" className="rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-bold text-white hover:bg-[#C5A032]">
+                                                        {editingAlamat ? 'Simpan Perubahan' : 'Tambah Alamat'}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
 
                             {activeMenu === 'pengiriman' && (

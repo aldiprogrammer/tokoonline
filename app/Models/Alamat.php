@@ -9,6 +9,7 @@ class Alamat extends Model
     protected $fillable = [
         'id_profil',
         'id_user',
+        'alamat_utama',
         'provinsi',
         'kabupaten',
         'kecamatan',

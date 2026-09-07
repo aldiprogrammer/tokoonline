@@ -18,7 +18,7 @@ class ProfilController extends Controller
         $this->syncPendingMidtransOrders($request->user()->id);
 
         $profil = Profil::where('id_user', $request->user()->id)->first();
-        $alamat = Alamat::where('id_user', $request->user()->id)->first();
+        $alamats = Alamat::where('id_user', $request->user()->id)->orderByDesc('alamat_utama')->get();
         $orders = Order::with(['items', 'reviews'])
             ->where('id_user', $request->user()->id)
             ->latest()
@@ -26,7 +26,8 @@ class ProfilController extends Controller
 
         return Inertia::render('App/Profil', [
             'profil' => $profil,
-            'alamat' => $alamat,
+            'alamat' => $alamats->first(),
+            'alamatList' => $alamats,
             'orders' => $orders,
             'profileConfig' => [
                 'rajaongkirReady' => filled(config('services.rajaongkir.key')),
@@ -45,35 +46,137 @@ class ProfilController extends Controller
             'kelurahan' => 'required|string|max:50',
             'alamat' => 'required|string|max:255',
             'kode_pos' => 'nullable|string|max:30',
-            'rajaongkir_destination_id' => 'required|string|max:30',
-            'rajaongkir_destination_label' => 'required|string|max:255',
+            'rajaongkir_destination_id' => 'nullable|string|max:30',
+            'rajaongkir_destination_label' => 'nullable|string|max:255',
         ]);
 
+        $userId = $request->user()->id;
+
         $profil = Profil::updateOrCreate(
-            ['id_user' => $request->user()->id],
+            ['id_user' => $userId],
             [
                 'nama' => $validated['nama'],
                 'whatsapp' => $validated['whatsapp'],
-                'point' => Profil::where('id_user', $request->user()->id)->value('point') ?? 0,
+                'point' => Profil::where('id_user', $userId)->value('point') ?? 0,
             ]
         );
 
-        Alamat::updateOrCreate(
-            ['id_user' => $request->user()->id],
-            [
-                'id_profil' => $profil->id,
-                'provinsi' => $validated['provinsi'],
-                'kabupaten' => $validated['kabupaten'],
-                'kecamatan' => $validated['kecamatan'],
-                'kelurahan' => $validated['kelurahan'],
-                'alamat' => $validated['alamat'],
-                'kode_pos' => $validated['kode_pos'] ?? '',
-                'rajaongkir_destination_id' => $validated['rajaongkir_destination_id'] ?? null,
-                'rajaongkir_destination_label' => $validated['rajaongkir_destination_label'] ?? null,
-            ]
-        );
+        $primary = Alamat::where('id_user', $userId)->where('alamat_utama', true)->first();
+
+        if ($primary) {
+            $this->saveAlamat($userId, $profil->id, $validated, $primary, true);
+        } else {
+            Alamat::where('id_user', $userId)->update(['alamat_utama' => false]);
+            Alamat::create(array_merge($this->alamatFields($profil->id, $validated), ['id_user' => $userId, 'alamat_utama' => true]));
+        }
 
         return back()->with('success', 'Profil customer berhasil disimpan.');
+    }
+
+    public function storeAlamat(Request $request)
+    {
+        $validated = $this->validateAlamat($request);
+
+        $userId = $request->user()->id;
+        $profil = Profil::firstOrCreate(
+            ['id_user' => $userId],
+            ['nama' => $request->user()->name, 'whatsapp' => '', 'point' => 0]
+        );
+
+        $alamatCount = Alamat::where('id_user', $userId)->count();
+
+        Alamat::create(array_merge(
+            $this->alamatFields($profil->id, $validated),
+            ['id_user' => $userId, 'alamat_utama' => $alamatCount === 0]
+        ));
+
+        return back()->with('success', 'Alamat berhasil ditambahkan.');
+    }
+
+    public function updateAlamat(Request $request, $id)
+    {
+        $alamat = Alamat::where('id_user', $request->user()->id)->findOrFail($id);
+        $validated = $this->validateAlamat($request);
+
+        $this->saveAlamat(
+            $request->user()->id,
+            $alamat->id_profil,
+            $validated,
+            $alamat,
+            (bool) $alamat->alamat_utama
+        );
+
+        return back()->with('success', 'Alamat berhasil diperbarui.');
+    }
+
+    public function destroyAlamat(Request $request, $id)
+    {
+        $alamat = Alamat::where('id_user', $request->user()->id)->findOrFail($id);
+        $wasPrimary = (bool) $alamat->alamat_utama;
+
+        $alamat->delete();
+
+        if ($wasPrimary) {
+            $next = Alamat::where('id_user', $request->user()->id)->orderBy('id')->first();
+            if ($next) {
+                $next->update(['alamat_utama' => true]);
+            }
+        }
+
+        return back()->with('success', 'Alamat berhasil dihapus.');
+    }
+
+    public function setAlamatUtama(Request $request, $id)
+    {
+        $alamat = Alamat::where('id_user', $request->user()->id)->findOrFail($id);
+
+        Alamat::where('id_user', $request->user()->id)->update(['alamat_utama' => false]);
+        $alamat->update(['alamat_utama' => true]);
+
+        return back()->with('success', 'Alamat utama berhasil diubah.');
+    }
+
+    private function validateAlamat(Request $request): array
+    {
+        return $request->validate([
+            'provinsi' => 'required|string|max:50',
+            'kabupaten' => 'required|string|max:50',
+            'kecamatan' => 'required|string|max:50',
+            'kelurahan' => 'required|string|max:50',
+            'alamat' => 'required|string|max:255',
+            'kode_pos' => 'nullable|string|max:30',
+            'rajaongkir_destination_id' => 'nullable|string|max:30',
+            'rajaongkir_destination_label' => 'nullable|string|max:255',
+        ]);
+    }
+
+    private function alamatFields(int $profilId, array $data): array
+    {
+        return [
+            'id_profil' => $profilId,
+            'provinsi' => $data['provinsi'],
+            'kabupaten' => $data['kabupaten'],
+            'kecamatan' => $data['kecamatan'],
+            'kelurahan' => $data['kelurahan'],
+            'alamat' => $data['alamat'],
+            'kode_pos' => $data['kode_pos'] ?? '',
+            'rajaongkir_destination_id' => $data['rajaongkir_destination_id'] ?? null,
+            'rajaongkir_destination_label' => $data['rajaongkir_destination_label'] ?? null,
+        ];
+    }
+
+    private function saveAlamat(int $userId, int $profilId, array $data, ?Alamat $alamat, bool $isPrimary): Alamat
+    {
+        $fields = $this->alamatFields($profilId, $data);
+
+        if ($isPrimary) {
+            Alamat::where('id_user', $userId)->update(['alamat_utama' => false]);
+            $fields['alamat_utama'] = true;
+        }
+
+        $alamat->update($fields);
+
+        return $alamat;
     }
 
     private function syncPendingMidtransOrders(int $userId): void

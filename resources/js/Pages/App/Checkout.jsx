@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 
-export default function Checkout({ cartItems = [], profil, alamat, checkoutConfig, sablonPrices = [] }) {
+export default function Checkout({ cartItems = [], profil, alamat, alamatList = [], checkoutConfig, sablonPrices = [] }) {
     const savedDestination = alamat?.rajaongkir_destination_id
         ? {
             id: Number(alamat.rajaongkir_destination_id),
@@ -15,6 +15,8 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
         whatsapp: profil?.whatsapp || '',
         alamat_pengiriman: alamat?.alamat || '',
     })
+    const [selectedAlamat, setSelectedAlamat] = useState(alamat || null)
+    const [alamatPickerOpen, setAlamatPickerOpen] = useState(false)
     const [destinationSearch, setDestinationSearch] = useState(savedDestination?.label || alamat?.kabupaten || '')
     const [destinations, setDestinations] = useState([])
     const [destinationOpen, setDestinationOpen] = useState(false)
@@ -156,6 +158,33 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
             Swal.fire('Gagal', error.message, 'error')
         } finally {
             setLoadingCost(false)
+        }
+    }
+
+    const applySavedAlamat = (alamatItem) => {
+        setSelectedAlamat(alamatItem)
+        setAlamatPickerOpen(false)
+        setForm({
+            nama_penerima: profil?.nama || '',
+            whatsapp: profil?.whatsapp || '',
+            alamat_pengiriman: alamatItem?.alamat || '',
+        })
+
+        const destination = alamatItem?.rajaongkir_destination_id
+            ? {
+                id: Number(alamatItem.rajaongkir_destination_id),
+                label: alamatItem.rajaongkir_destination_label || [alamatItem.kelurahan, alamatItem.kecamatan, alamatItem.kabupaten, alamatItem.provinsi].filter(Boolean).join(', '),
+                zip_code: alamatItem.kode_pos || '',
+            }
+            : null
+
+        if (destination) {
+            chooseDestination(destination)
+        } else {
+            setSelectedDestination(null)
+            setSelectedShipping(null)
+            setShippingOptions([])
+            setDestinationSearch('')
         }
     }
 
@@ -344,6 +373,33 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                         <div className="space-y-6">
                             <section className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
                                 <h2 className="text-xl font-black">Data penerima</h2>
+                                {alamatList.length > 0 && (
+                                    <div className="mt-4">
+                                        <label className="text-sm font-bold text-gray-700">Alamat pengiriman</label>
+                                        <div className="mt-2 flex items-start justify-between gap-3 rounded-2xl border p-3">
+                                            <div className="min-w-0">
+                                                {selectedAlamat ? (
+                                                    <>
+                                                        <p className="font-black">
+                                                            {selectedAlamat.rajaongkir_destination_label || [selectedAlamat.kelurahan, selectedAlamat.kecamatan, selectedAlamat.kabupaten, selectedAlamat.provinsi].filter(Boolean).join(', ')}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-gray-600">{selectedAlamat.alamat}</p>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-sm text-gray-500">Belum ada alamat dipilih.</p>
+                                                )}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setAlamatPickerOpen(true)}
+                                                className="shrink-0 rounded-full bg-[#D4AF37] px-4 py-2 text-sm font-bold text-white hover:bg-[#C5A032]"
+                                            >
+                                                <i className="fas fa-location-dot mr-1"></i>
+                                                {selectedAlamat ? 'Ganti Alamat' : 'Pilih Alamat'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                                     <Input label="Nama penerima" value={form.nama_penerima} onChange={(value) => setForm({ ...form, nama_penerima: value })} />
                                     <Input label="WhatsApp" type="tel" value={form.whatsapp} onChange={(value) => setForm({ ...form, whatsapp: value })} />
@@ -725,6 +781,62 @@ export default function Checkout({ cartItems = [], profil, alamat, checkoutConfi
                         </aside>
                     </form>
                 </main>
+
+                {alamatPickerOpen && (
+                    <div className="fixed inset-0 z-[70]">
+                        <div
+                            className="absolute inset-0 bg-black/50"
+                            onMouseDown={(e) => {
+                                if (e.target === e.currentTarget) setAlamatPickerOpen(false)
+                            }}
+                        ></div>
+                        <div className="pointer-events-none absolute inset-0 overflow-y-auto p-4">
+                            <div className="pointer-events-auto mx-auto mt-8 w-full max-w-lg rounded-3xl bg-white p-4 shadow-2xl sm:p-6">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-black">Pilih Alamat Pengiriman</h3>
+                                        <p className="text-sm text-gray-500">Alamat tersimpan kamu.</p>
+                                    </div>
+                                    <button type="button" onClick={() => setAlamatPickerOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 hover:bg-gray-100">
+                                        <i className="fas fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div className="grid gap-2">
+                                    {alamatList.map((item) => {
+                                        const full = [item.kelurahan, item.kecamatan, item.kabupaten, item.provinsi].filter(Boolean).join(', ')
+                                        const label = item.rajaongkir_destination_label || full
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => applySavedAlamat(item)}
+                                                className={`rounded-2xl border p-3 text-left text-sm transition ${selectedAlamat?.id === item.id ? 'border-[#D4AF37] bg-[#D4AF37]/5 ring-1 ring-[#D4AF37]' : 'border-gray-200 hover:border-gray-300'}`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <i className="fas fa-location-dot text-xs text-gray-400"></i>
+                                                    <span className="truncate font-black">{label}</span>
+                                                    {item.alamat_utama && (
+                                                        <span className="ml-auto shrink-0 rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-bold text-white">Utama</span>
+                                                    )}
+                                                </span>
+                                                <span className="mt-1 block text-xs text-gray-500">{item.alamat}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <div className="mt-4 flex justify-center">
+                                    <Link
+                                        href="/profil?tab=alamat&tambah=1"
+                                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                                    >
+                                        <i className="fas fa-plus"></i>
+                                        Tambah Alamat Baru
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     )

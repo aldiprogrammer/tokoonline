@@ -38,6 +38,11 @@ Route::post('/logout', [PenggunaLoginController::class, 'logout'])->name('logout
 Route::middleware('auth')->group(function () {
     Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
     Route::post('/profil', [ProfilController::class, 'store'])->name('profil.store');
+
+    Route::post('/alamat', [ProfilController::class, 'storeAlamat'])->name('alamat.store');
+    Route::put('/alamat/{id}', [ProfilController::class, 'updateAlamat'])->name('alamat.update');
+    Route::delete('/alamat/{id}', [ProfilController::class, 'destroyAlamat'])->name('alamat.destroy');
+    Route::put('/alamat/{id}/utama', [ProfilController::class, 'setAlamatUtama'])->name('alamat.utama');
 });
 Route::get('/keranjang/{iduser}', [KeranjangController::class, 'index'])->name('karanjang');
 Route::put('/tambahqty/{id}', [KeranjangController::class, 'tambahqty'])->name('tambahqty');
