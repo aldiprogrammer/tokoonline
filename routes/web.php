@@ -5,6 +5,7 @@ use App\Http\Controllers\admin\KategoriController;
 use App\Http\Controllers\admin\OrderController;
 use App\Http\Controllers\admin\PenggunaController;
 use App\Http\Controllers\admin\ProdukCotroller;
+use App\Http\Controllers\admin\RatioController;
 use App\Http\Controllers\admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\admin\ReportController;
 use App\Http\Controllers\admin\RoleController;
@@ -107,6 +108,10 @@ Route::middleware('pengguna.session')->group(function () {
     Route::get('/admin/customer', [AdminCustomerController::class, 'index'])->name('admin.customer');
     Route::get('/admin/laporan', [ReportController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan/pdf', [ReportController::class, 'exportPdf'])->name('admin.laporan.pdf');
+    Route::get('/admin/ratio', [RatioController::class, 'index'])->name('admin.ratio');
+    Route::post('/admin/ratio', [RatioController::class, 'store'])->name('store.admin.ratio');
+    Route::put('/admin/ratio/{id}', [RatioController::class, 'update'])->name('update.admin.ratio');
+    Route::delete('/admin/ratio/{id}', [RatioController::class, 'delete'])->name('delete.admin.ratio');
 });
 
 

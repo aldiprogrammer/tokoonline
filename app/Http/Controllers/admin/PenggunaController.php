@@ -15,7 +15,10 @@ class PenggunaController extends Controller
     {
         $role = Role::all();
         $pengguna = Pengguna::with('role')->get();
-        return Inertia::render('Admin/Pengguna', compact('role', 'pengguna'));
+        $menuList = collect(Pengguna::menus())
+            ->map(fn ($label, $key) => ['key' => $key, 'label' => $label])
+            ->values();
+        return Inertia::render('Admin/Pengguna', compact('role', 'pengguna', 'menuList'));
     }
 
     function store(Request $request)
@@ -24,6 +27,7 @@ class PenggunaController extends Controller
         $pg->id_role = $request->role;
         $pg->username = $request->username;
         $pg->password = Hash::make($request->password);
+        $pg->hak_akses = $request->hak_akses ?? [];
         $pg->save();
         return redirect()->back()->with('success', 'Data berhasil ditambah');
     }
@@ -38,6 +42,7 @@ class PenggunaController extends Controller
         if ($request->password != null) {
             $pg->password = Hash::make($request->password);
         }
+        $pg->hak_akses = $request->hak_akses ?? [];
         $pg->update();
         return redirect()->back()->with('success', 'Data berhasil diubah');
     }

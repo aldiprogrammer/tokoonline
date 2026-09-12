@@ -11,6 +11,7 @@ class Produk extends Model
         'nama_produk',
         'id_kategori',
         'ukuran',
+        'ratio',
         'keterangan',
         'harga',
         'diskon',

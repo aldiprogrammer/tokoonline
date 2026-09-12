@@ -42,6 +42,7 @@ class PenggunaLoginController extends Controller
             'username' => $pengguna->username,
             'role_id' => $pengguna->id_role,
             'role' => $pengguna->role?->role,
+            'hak_akses' => $pengguna->hak_akses ?? [],
         ]);
 
         return redirect()->route('admin.dashboard')->with('success', 'Login berhasil');

@@ -268,6 +268,13 @@ export default function DetailProduk({ produk, produkTerkait, reviews = [], revi
 
                             <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                                 <h2 className="font-black">Keterangan Produk</h2>
+                                {produk.ratio && (
+                                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                                        <i className="fas fa-divide text-gray-500"></i>
+                                        <span className="font-semibold">Ratio:</span>
+                                        <span className="font-bold text-gray-950">{produk.ratio}</span>
+                                    </div>
+                                )}
                                 <p className="mt-2 whitespace-pre-line text-sm leading-7 text-gray-600">
                                     {produk.keterangan || 'Produk fashion pilihan dengan bahan nyaman untuk aktivitas harian.'}
                                 </p>

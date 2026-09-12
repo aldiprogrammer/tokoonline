@@ -501,6 +501,12 @@ export default function Toko({ produk, kategori }) {
                                                         <i className="fas fa-store text-[10px]"></i>
                                                         {item.ukuran?.split(',').map((s) => s.trim()).join(', ') || 'Jakarta'}
                                                     </span>
+                                                    {item.ratio && (
+                                                        <span className="flex items-center gap-1">
+                                                            <i className="fas fa-divide text-[10px]"></i>
+                                                            {item.ratio}
+                                                        </span>
+                                                    )}
                                                     {Number(item.stok) > 0 && (
                                                         <span className="flex items-center gap-1">
                                                             <i className="fas fa-box text-[10px]"></i>

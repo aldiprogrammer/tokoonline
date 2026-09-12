@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Gambarprodk;
 use App\Models\Kategori;
 use App\Models\Produk;
+use App\Models\Ratio;
 use App\Services\WatermarkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -25,7 +26,8 @@ class ProdukCotroller extends Controller
     {
         $kode = 'PRD-' . rand(0, 100000);
         $kategori = Kategori::all();
-        return Inertia::render('Admin/Tambahproduk', compact('kode', 'kategori'));
+        $ratios = Ratio::all();
+        return Inertia::render('Admin/Tambahproduk', compact('kode', 'kategori', 'ratios'));
     }
 
     function store(Request $request)
@@ -50,6 +52,7 @@ class ProdukCotroller extends Controller
         $pr->nama_produk = $request->nama;
         $pr->id_kategori = $request->kategori_id;
         $pr->ukuran = implode(',', $request->ukuran);
+        $pr->ratio = $request->ratio;
         $pr->keterangan = $request->keterangan;
         $harga = (int) $request->harga;
         $diskon = (int) $request->diskon;
@@ -101,6 +104,7 @@ class ProdukCotroller extends Controller
         $pr->nama_produk = $request->nama;
         $pr->id_kategori = $request->kategori_id;
         $pr->ukuran = implode(',', $request->ukuran);
+        $pr->ratio = $request->ratio ?? $pr->ratio;
         $pr->keterangan = $request->keterangan;
         $harga = (int) $request->harga;
         $diskon = (int) $request->diskon;

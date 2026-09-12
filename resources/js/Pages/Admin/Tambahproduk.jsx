@@ -2,7 +2,7 @@ import AdminLayout from '@/Layouts/AdminLayout'
 import React, { useState } from 'react'
 import { useForm } from '@inertiajs/react'
 
-export default function Tambahproduk({ kode, kategori }) {
+export default function Tambahproduk({ kode, kategori, ratios }) {
     const ukuranOptions = ['S', 'M', 'L', 'XL', 'XXL']
     const [ukuranLukisan, setUkuranLukisan] = useState({ lebar: '', tinggi: '' })
 
@@ -11,6 +11,7 @@ export default function Tambahproduk({ kode, kategori }) {
         nama: '',
         kategori_id: '',
         ukuran: [],
+        ratio: '',
         keterangan: '',
         harga: '',
         diskon: '',
@@ -27,6 +28,7 @@ export default function Tambahproduk({ kode, kategori }) {
         if (e.target.name === 'kategori_id') {
             setData('kategori_id', e.target.value)
             setData('ukuran', [])
+            setData('ratio', '')
             setUkuranLukisan({ lebar: '', tinggi: '' })
             return
         }
@@ -122,6 +124,14 @@ export default function Tambahproduk({ kode, kategori }) {
                                         <option key={item.id} value={item.id}>{item.kategori}</option>
                                     ))}
                                 </select>
+                                {isLukisan && (
+                                    <select name="ratio" onChange={handleChange} className='input input-bordered mb-3' value={data.ratio}>
+                                        <option value="">Pilih ratio</option>
+                                        {ratios.map((item) => (
+                                            <option key={item.id} value={item.ratio}>{item.ratio}</option>
+                                        ))}
+                                    </select>
+                                )}
 
                                 <div className="col-span-2 mb-3">
                                     {isLukisan ? (

@@ -268,6 +268,7 @@ export default function Produk({ produk, kategori }) {
                                     <th>Nama</th>
                                     <th>Kategori</th>
                                     <th>Ukuran</th>
+                                    <th>Ratio</th>
                                     <th>Keterangan</th>
                                     <th>Harga</th>
                                     <th>Diskon</th>
@@ -292,6 +293,7 @@ export default function Produk({ produk, kategori }) {
                                                     ))}
                                                 </div>
                                             </td>
+                                            <td>{item.ratio || '-'}</td>
                                             <td className="max-w-48 truncate">{item.keterangan}</td>
                                             <td>{item.harga}</td>
                                             <td>{item.diskon}</td>
@@ -317,7 +319,7 @@ export default function Produk({ produk, kategori }) {
                                     )
                                 })) : (
                                     <tr>
-                                        <td colSpan={11} className="text-center py-8 text-base-content/50">
+                                        <td colSpan={12} className="text-center py-8 text-base-content/50">
                                             <i className="fas fa-inbox text-3xl block mb-2"></i>
                                             Tidak ada data ditemukan
                                         </td>

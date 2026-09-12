@@ -6,6 +6,24 @@ export default function AdminLayout({ children }) {
     const [theme, setTheme] = useState("light")
     const { flash, pengguna } = usePage().props
 
+    const menus = [
+        { key: 'dashboard', href: '/admin/dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', active: true },
+        { key: 'order-hari-ini', href: '/admin/order-hari-ini', icon: 'fas fa-calendar-day', label: 'Order hari ini' },
+        { key: 'order', href: '/admin/order', icon: 'fas fa-bag-shopping', label: 'Data order' },
+        { key: 'produk', href: '/admin/produk', icon: 'fas fa-shirt', label: 'Produk' },
+        { key: 'customer', href: '/admin/customer', icon: 'fas fa-users', label: 'Customer' },
+        { key: 'laporan', href: '/admin/laporan', icon: 'fas fa-book', label: 'Laporan' },
+        { key: 'kategori', href: '/admin/kategori', icon: 'fas fa-list', label: 'Kategori' },
+        { key: 'ratio', href: '/admin/ratio', icon: 'fas fa-divide', label: 'Ratio' },
+        { key: 'role', href: '/admin/role', icon: 'fas fa-equals', label: 'Role' },
+        { key: 'pengguna', href: '/admin/pengguna', icon: 'fas fa-user-circle', label: 'Pengguna' },
+    ]
+
+    const hakAkses = pengguna?.hak_akses || []
+    const visibleMenus = hakAkses.length > 0
+        ? menus.filter((m) => hakAkses.includes(m.key))
+        : menus
+
     useEffect(() => {
         if (flash?.success) {
             Swal.fire({
@@ -60,16 +78,16 @@ export default function AdminLayout({ children }) {
                     </div>
 
                     <ul className="menu px-4 gap-2 text-base">
-                        <li><Link href={'/admin/dashboard'} className="active bg-primary text-white rounded-lg"><i class="fa-solid fa-gauge"></i> Dashboard</Link></li>
-                        <li><Link href={'/admin/order-hari-ini'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-calendar-day'></i>Order hari ini</Link></li>
-                        <li><Link href={'/admin/order'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-bag-shopping'></i>Data order</Link></li>
-
-                        <li><Link href={'/admin/produk'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-shirt'></i>Produk</Link></li>
-                        <li><Link href={'/admin/customer'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-users'></i>Customer</Link></li>
-                        <li><Link href={'/admin/laporan'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-book'></i> Laporan</Link></li>
-                        <li><Link href={'/admin/kategori'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-list'></i> Kategori</Link></li>
-                        <li><Link href={'/admin/role'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-equals'></i> Role</Link></li>
-                        <li><Link href={'/admin/pengguna'} className="hover:bg-base-200 rounded-lg"><i className='fas fa-user-circle'></i> Pengguna</Link></li>
+                        {visibleMenus.map((menu) => (
+                            <li key={menu.key}>
+                                <Link
+                                    href={menu.href}
+                                    className={menu.active ? "active bg-primary text-white rounded-lg" : "hover:bg-base-200 rounded-lg"}
+                                >
+                                    <i className={menu.icon}></i> {menu.label}
+                                </Link>
+                            </li>
+                        ))}
                     </ul>
                 </div>
 
